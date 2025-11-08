@@ -9342,15 +9342,21 @@ bool CTFGameRules::SetPasstimeWinningTeam()
 	CTFTeamManager *pTeamMgr = TFTeamMgr();
 	int iBlueScore = pTeamMgr->GetFlagCaptures( TF_TEAM_BLUE );
 	int iRedScore = pTeamMgr->GetFlagCaptures( TF_TEAM_RED );
+	int iPurpleScore = pTeamMgr->GetFlagCaptures(TF_TEAM_PURPLE);
 	if ( ( iBlueScore < iScoreLimit ) && ( iRedScore < iScoreLimit ) )
 	{
 		// no team has exceeded the score limit
 		return false;
 	}
 
-	int iWinnerTeam = ( iBlueScore > iRedScore )
-		? TF_TEAM_BLUE
-		: TF_TEAM_RED;
+	int iWinnerTeam;
+
+	if (iBlueScore >= iRedScore && iBlueScore >= iPurpleScore)
+		iWinnerTeam = TF_TEAM_BLUE;
+	else if (iRedScore >= iBlueScore && iRedScore >= iPurpleScore)
+		iWinnerTeam = TF_TEAM_RED;
+	else
+		iWinnerTeam = TF_TEAM_PURPLE;
 	SetWinningTeam( iWinnerTeam, WINREASON_SCORED );
 	return true;
 }
@@ -9585,130 +9591,170 @@ void CTFGameRules::PlayWinSong( int team )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CTFGameRules::SetWinningTeam( int team, int iWinReason, bool bForceMapReset /* = true */, bool bSwitchTeams /* = false*/, bool bDontAddScore /* = false*/, bool bFinal /*= false*/ )
+//-----------------------------------------------------------------------------
+// Purpose: Called when a round ends – award bonus time, play sounds, update stats,
+//          and finally call the base class implementation.
+//-----------------------------------------------------------------------------
+void CTFGameRules::SetWinningTeam(int team, int iWinReason,
+	bool bForceMapReset /* = true */,
+	bool bSwitchTeams   /* = false */,
+	bool bDontAddScore  /* = false */,
+	bool bFinal         /* = false */)
 {
-	// matching the value calculated in CTeamplayRoundBasedRules::State_Enter_TEAM_WIN() 
-	// for m_flStateTransitionTime and adding 1 second to make sure we're covered
-	int nTime = GetBonusRoundTime( bFinal ) + 1;  
+	// -----------------------------------------------------------------
+	// 1. Bonus-round time (used for crit-buffs)
+	// -----------------------------------------------------------------
+	int nBonusTime = GetBonusRoundTime(bFinal) + 1;
 
-	for ( int i = 1; i <= gpGlobals->maxClients; i++ )
+	// -----------------------------------------------------------------
+	// 2. Give every player the appropriate bonus-time crit buff
+	// -----------------------------------------------------------------
+	for (int i = 1; i <= gpGlobals->maxClients; ++i)
 	{
-		CTFPlayer *pTFPlayer = ToTFPlayer( UTIL_PlayerByIndex( i ) );
-		if ( !pTFPlayer )
+		CTFPlayer* pTFPlayer = ToTFPlayer(UTIL_PlayerByIndex(i));
+		if (!pTFPlayer)
 			continue;
 
-		// store our team for the response rules at the next round start
-		// (teams might be switched for attack/defend maps)
-		pTFPlayer->SetPrevRoundTeamNum( pTFPlayer->GetTeamNumber() );
+		// Store the team the player was on *this* round – used by response rules
+		pTFPlayer->SetPrevRoundTeamNum(pTFPlayer->GetTeamNumber());
 
-		if ( team != TEAM_UNASSIGNED )
+		if (team != TEAM_UNASSIGNED)
 		{
-			if ( pTFPlayer->GetTeamNumber() == team )
+			if (pTFPlayer->GetTeamNumber() == team)
 			{
-				if ( pTFPlayer->IsAlive() )
+				// Winners get crit-buffed for the whole bonus period
+				if (pTFPlayer->IsAlive())
 				{
-					pTFPlayer->m_Shared.AddCond( TF_COND_CRITBOOSTED_BONUS_TIME, nTime );
+					pTFPlayer->m_Shared.AddCond(TF_COND_CRITBOOSTED_BONUS_TIME, nBonusTime);
 				}
 			}
 			else
 			{
+				// Losers clear any facial expression
 				pTFPlayer->ClearExpression();
+
 #ifdef GAME_DLL
-				// Loser karts get max Damage and stun
-				if ( pTFPlayer->m_Shared.InCond( TF_COND_HALLOWEEN_KART ) )
+				// Halloween kart losers get a big damage hit + stun
+				if (pTFPlayer->m_Shared.InCond(TF_COND_HALLOWEEN_KART))
 				{
-					pTFPlayer->AddKartDamage( 666 );
-					pTFPlayer->m_Shared.StunPlayer( 1.5f, 1.0f, TF_STUN_BOTH );		// Short full stun then slow
-					pTFPlayer->m_Shared.StunPlayer( 10.0f, 0.25f, TF_STUN_MOVEMENT );
+					pTFPlayer->AddKartDamage(666);
+					pTFPlayer->m_Shared.StunPlayer(1.5f, 1.0f, TF_STUN_BOTH);          // short full stun
+					pTFPlayer->m_Shared.StunPlayer(10.0f, 0.25f, TF_STUN_MOVEMENT);   // then slow movement
 				}
-#endif //GAME_DLL
+#endif // GAME_DLL
 			}
 		}
 	}
 
+	// -----------------------------------------------------------------
+	// 3. Duel / mini-game winner handling
+	// -----------------------------------------------------------------
 	DuelMiniGame_AssignWinners();
 
 #ifdef TF_RAID_MODE
-	if ( !IsBossBattleMode() )
+	if (!IsBossBattleMode())
 	{
-		// Don't do a full reset in Raid mode if the defending team didn't win
-		if ( IsRaidMode() && team != TF_TEAM_PVE_DEFENDERS )
+		// In Raid mode we *don’t* reset the map if the defenders lost
+		if (IsRaidMode() && team != TF_TEAM_PVE_DEFENDERS)
 		{
 			bForceMapReset = false;
 		}
 	}
 #endif // TF_RAID_MODE
 
-	SetBirthdayPlayer( NULL );
+	// -----------------------------------------------------------------
+	// 4. Birthday player reset
+	// -----------------------------------------------------------------
+	SetBirthdayPlayer(NULL);
 
 #ifdef GAME_DLL
-	if ( m_bPlayingKoth )
+	// -----------------------------------------------------------------
+	// 5. KOTH – give each team the time they *didn’t* use
+	// -----------------------------------------------------------------
+	if (m_bPlayingKoth)
 	{
-		// Increment BLUE KOTH cap time
-		CTeamRoundTimer *pKOTHTimer = TFGameRules()->GetBlueKothRoundTimer();
-		GetGlobalTFTeam( TF_TEAM_BLUE )->AddKOTHTime( pKOTHTimer->GetTimerMaxLength() - pKOTHTimer->GetTimeRemaining() );
+		CTeamRoundTimer* pTimer = GetBlueKothRoundTimer();
+		GetGlobalTFTeam(TF_TEAM_BLUE)->AddKOTHTime(pTimer->GetTimerMaxLength() - pTimer->GetTimeRemaining());
 
-		// Increment RED KOTH cap time
-		pKOTHTimer = TFGameRules()->GetRedKothRoundTimer();
-		GetGlobalTFTeam( TF_TEAM_RED )->AddKOTHTime( pKOTHTimer->GetTimerMaxLength() - pKOTHTimer->GetTimeRemaining() );
+		pTimer = GetRedKothRoundTimer();
+		GetGlobalTFTeam(TF_TEAM_RED)->AddKOTHTime(pTimer->GetTimerMaxLength() - pTimer->GetTimeRemaining());
 	}
-	else if ( HasMultipleTrains() )
+	// -----------------------------------------------------------------
+	// 6. Payload-Race (PLR) – record track progress for RED / BLUE / PURPLE
+	// -----------------------------------------------------------------
+	else if (HasMultipleTrains())
 	{
-		for ( int i = 0 ; i < ITFTeamTrainWatcher::AutoList().Count() ; ++i )
+		for (int i = 0; i < ITFTeamTrainWatcher::AutoList().Count(); ++i)
 		{
-			CTeamTrainWatcher *pTrainWatcher = static_cast< CTeamTrainWatcher* >( ITFTeamTrainWatcher::AutoList()[i] );
-			if ( !pTrainWatcher->IsDisabled() )
+			CTeamTrainWatcher* pWatcher = static_cast<CTeamTrainWatcher*>(ITFTeamTrainWatcher::AutoList()[i]);
+			if (pWatcher->IsDisabled())
+				continue;
+
+			int iWatcherTeam = pWatcher->GetTeamNumber();
+
+			if (iWatcherTeam == TF_TEAM_RED)
+				GetGlobalTFTeam(TF_TEAM_RED)->AddPLRTrack(pWatcher->GetTrainProgress());
+			else if (iWatcherTeam == TF_TEAM_BLUE)
+				GetGlobalTFTeam(TF_TEAM_BLUE)->AddPLRTrack(pWatcher->GetTrainProgress());
+			else if (iWatcherTeam == TF_TEAM_PURPLE)
+				GetGlobalTFTeam(TF_TEAM_PURPLE)->AddPLRTrack(pWatcher->GetTrainProgress());
+		}
+	}
+#endif // GAME_DLL
+
+	// -----------------------------------------------------------------
+	// 7. Halloween Doomsday mini-game win event
+	// -----------------------------------------------------------------
+	if (IsHalloweenScenario(HALLOWEEN_SCENARIO_DOOMSDAY) && CTFMinigameLogic::GetMinigameLogic())
+	{
+		CTFMiniGame* pMiniGame = CTFMinigameLogic::GetMinigameLogic()->GetActiveMinigame();
+		if (pMiniGame)
+		{
+			IGameEvent* pEvent = gameeventmanager->CreateEvent("minigame_win");
+			if (pEvent)
 			{
-				if ( pTrainWatcher->GetTeamNumber() == TF_TEAM_RED )
-				{
-					GetGlobalTFTeam( TF_TEAM_RED )->AddPLRTrack( pTrainWatcher->GetTrainProgress() );
-				}
-				else
-				{
-					GetGlobalTFTeam( TF_TEAM_BLUE )->AddPLRTrack( pTrainWatcher->GetTrainProgress() );
-				}
+				pEvent->SetInt("team", team);
+				pEvent->SetInt("type", (int)pMiniGame->GetMinigameType());
+				gameeventmanager->FireEvent(pEvent);
 			}
 		}
 	}
-#endif
 
-	if ( IsHalloweenScenario( HALLOWEEN_SCENARIO_DOOMSDAY ) && CTFMinigameLogic::GetMinigameLogic() )
-	{
-		CTFMiniGame *pMiniGame = CTFMinigameLogic::GetMinigameLogic()->GetActiveMinigame();
-		if ( pMiniGame )
-		{
-			IGameEvent *event = gameeventmanager->CreateEvent( "minigame_win" );
-			if ( event )
-			{
-				event->SetInt( "team", team );
-				event->SetInt( "type", (int)( pMiniGame->GetMinigameType() ) );
-				gameeventmanager->FireEvent( event );
-			}
-		}
-	}
-
-	if ( IsPasstimeMode() )
+	// -----------------------------------------------------------------
+	// 8. Passtime – fill out stats before the base class reports them
+	// -----------------------------------------------------------------
+	if (IsPasstimeMode())
 	{
 		CTF_GameStats.m_passtimeStats.summary.nRoundEndReason = iWinReason;
-		CTF_GameStats.m_passtimeStats.summary.nRoundRemainingSec = GetActiveRoundTimer() ? (int) GetActiveRoundTimer()->GetTimeRemaining() : 0;
-		CTF_GameStats.m_passtimeStats.summary.nScoreBlue = GetGlobalTFTeam( TF_TEAM_BLUE )->GetFlagCaptures();
-		CTF_GameStats.m_passtimeStats.summary.nScoreRed = GetGlobalTFTeam( TF_TEAM_RED )->GetFlagCaptures();
+		CTF_GameStats.m_passtimeStats.summary.nRoundRemainingSec = GetActiveRoundTimer()
+			? (int)GetActiveRoundTimer()->GetTimeRemaining()
+			: 0;
+		CTF_GameStats.m_passtimeStats.summary.nScoreBlue = GetGlobalTFTeam(TF_TEAM_BLUE)->GetFlagCaptures();
+		CTF_GameStats.m_passtimeStats.summary.nScoreRed = GetGlobalTFTeam(TF_TEAM_RED)->GetFlagCaptures();
 
-		// stats reporting happens as a result of BaseClass::SetWinningTeam, but we need to make sure to
-		// update ball carry data before stats are reported.
-		// FIXME: refactor this so we're not calling it just for its side effects :/
-		CPasstimeBall *pBall = g_pPasstimeLogic->GetBall();
-		if ( pBall )
+		// Make sure the ball is marked out-of-play before stats are flushed
+		CPasstimeBall* pBall = g_pPasstimeLogic ? g_pPasstimeLogic->GetBall() : NULL;
+		if (pBall)
 		{
 			pBall->SetStateOutOfPlay();
 		}
 	}
 
-	CTeamplayRoundBasedRules::SetWinningTeam( team, iWinReason, bForceMapReset, bSwitchTeams, bDontAddScore, bFinal );
+	// -----------------------------------------------------------------
+	// 9. Finally let the base class do its generic round-end work
+	// -----------------------------------------------------------------
+	CTeamplayRoundBasedRules::SetWinningTeam(team, iWinReason,
+		bForceMapReset, bSwitchTeams,
+		bDontAddScore, bFinal);
 
-	if ( IsCompetitiveMode() )
+	// -----------------------------------------------------------------
+	// 10. Competitive mode – speak the appropriate concept
+	// -----------------------------------------------------------------
+	if (IsCompetitiveMode())
 	{
-		HaveAllPlayersSpeakConceptIfAllowed( IsGameOver() ? MP_CONCEPT_MATCH_OVER_COMP : MP_CONCEPT_GAME_OVER_COMP );
+		HaveAllPlayersSpeakConceptIfAllowed(
+			IsGameOver() ? MP_CONCEPT_MATCH_OVER_COMP
+			: MP_CONCEPT_GAME_OVER_COMP);
 	}
 }
 
@@ -13637,8 +13683,10 @@ void CTFGameRules::SendWinPanelInfo( bool bGameOver )
 	{
 		int iBlueScore = GetGlobalTeam( TF_TEAM_BLUE )->GetScore();
 		int iRedScore = GetGlobalTeam( TF_TEAM_RED )->GetScore();
+		int iPurpleScore = GetGlobalTeam(TF_TEAM_PURPLE)->GetScore();
 		int iBlueScorePrev = iBlueScore;
 		int iRedScorePrev = iRedScore;
+		int iPurpleScorePrev = iPurpleScore;
 
 		bool bRoundComplete = m_bForceMapReset || ( IsGameUnderTimeLimit() && ( GetTimeLeft() <= 0 ) );
 
@@ -13664,6 +13712,9 @@ void CTFGameRules::SendWinPanelInfo( bool bGameOver )
 			case TF_TEAM_RED:
 				iRedScorePrev = ( iRedScore - TEAMPLAY_ROUND_WIN_SCORE >= 0 ) ? ( iRedScore - TEAMPLAY_ROUND_WIN_SCORE ) : 0;
 				break;
+			case TF_TEAM_PURPLE:
+				iPurpleScorePrev = (iPurpleScore - TEAMPLAY_ROUND_WIN_SCORE >= 0) ? (iPurpleScore - TEAMPLAY_ROUND_WIN_SCORE) : 0;
+				break;
 			case TEAM_UNASSIGNED:
 				break;	// stalemate; nothing to do
 			}
@@ -13677,8 +13728,10 @@ void CTFGameRules::SendWinPanelInfo( bool bGameOver )
 		winEvent->SetInt( "flagcaplimit", IsPasstimeMode() ? tf_passtime_scores_per_round.GetInt() : tf_flag_caps_per_round.GetInt() );
 		winEvent->SetInt( "blue_score", iBlueScore );
 		winEvent->SetInt( "red_score", iRedScore );
+		winEvent->SetInt( "purple_score", iPurpleScore );
 		winEvent->SetInt( "blue_score_prev", iBlueScorePrev );
 		winEvent->SetInt( "red_score_prev", iRedScorePrev );
+		winEvent->SetInt("purple_score_prev", iPurpleScorePrev);
 		winEvent->SetInt( "round_complete", bRoundComplete );
 
 		CTFPlayerResource *pResource = dynamic_cast< CTFPlayerResource * >( g_pPlayerResource );

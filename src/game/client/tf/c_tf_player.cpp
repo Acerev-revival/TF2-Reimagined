@@ -225,8 +225,8 @@ ConVar tf_romevision_skip_prompt( "tf_romevision_skip_prompt", "0", FCVAR_ARCHIV
 void bf_disable_cosmetics_changed( IConVar *var, const char *pOldValue, float flOldValue );
 void bf_disable_unusual_effects_changed( IConVar *var, const char *pOldValue, float flOldValue );
 
-ConVar bf_disable_cosmetics( "bf_disable_cosmetics", "1", FCVAR_DEVELOPMENTONLY, "When set to 1, all cosmetic items (hats, misc items) will be hidden.", bf_disable_cosmetics_changed );
-ConVar bf_disable_unusual_effects( "bf_disable_unusual_effects", "1", FCVAR_DEVELOPMENTONLY, "When set to 1, all unusual particle effects will be hidden.", bf_disable_unusual_effects_changed );
+ConVar bf_disable_cosmetics("bf_disable_cosmetics", "0", FCVAR_ARCHIVE, "When set to 1, all cosmetic items (hats, misc items) will be hidden.", bf_disable_cosmetics_changed);
+ConVar bf_disable_unusual_effects("bf_disable_unusual_effects", "0", FCVAR_ARCHIVE, "When set to 1, all unusual particle effects will be hidden.", bf_disable_unusual_effects_changed);
 
 //-----------------------------------------------------------------------------
 // Purpose: Callback functions to immediately update wearable visibility
@@ -7379,6 +7379,12 @@ void C_TFPlayer::GetTeamColor( Color &color )
 		color[0] = 76;
 		color[1] = 109;
 		color[2] = 129;
+	}
+	else if (GetTeamNumber() == TF_TEAM_PURPLE)
+	{
+		color[0] = 114;
+		color[1] = 0;
+		color[2] = 255;
 	}
 	else
 	{

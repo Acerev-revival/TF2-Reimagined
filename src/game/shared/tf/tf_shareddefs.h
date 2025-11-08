@@ -32,6 +32,7 @@ enum
 {
 	TF_TEAM_RED = LAST_SHARED_TEAM+1,
 	TF_TEAM_BLUE,
+	TF_TEAM_PURPLE,
 	TF_TEAM_COUNT
 };
 
@@ -57,10 +58,11 @@ extern color32 g_aTeamColors[TF_TEAM_COUNT];
 #define COLOR_TF_SPECTATOR	Color( 245, 229, 196, 255 )
 #define COLOR_TF_RED		Color( 175, 73, 73, 255 )
 #define COLOR_TF_BLUE		Color( 79, 117, 143, 255 )
+#define COLOR_TF_PURPLE		Color( 79, 117, 143, 255 )
 
 #define CONTENTS_REDTEAM	CONTENTS_TEAM1
 #define CONTENTS_BLUETEAM	CONTENTS_TEAM2
-
+#define CONTENTS_PURPLETEAM	CONTENTS_TEAM3
 enum 
 {
 	TF_ARENA_NOTIFICATION_CAREFUL = 0,
@@ -94,6 +96,9 @@ inline int GetEnemyTeam( int team )
 
 	if ( team == TF_TEAM_BLUE )
 		return TF_TEAM_RED;
+
+	if (team == TF_TEAM_PURPLE)
+		return TF_TEAM_PURPLE;
 
 	// no enemy team
 	return team;
