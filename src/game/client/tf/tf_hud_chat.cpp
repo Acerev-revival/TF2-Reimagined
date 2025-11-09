@@ -40,11 +40,11 @@ int ClientUTIL_PlayerIsModDev( int clientIndex )
 	
 	switch(steamid)
 	{
-		case 76561198813329543: // Grub
+		case 76561199122389084: // Grub
 			return 1; // Devs
 		break;
 
-		case 76561199026136810: // Sargeant Death - The Balance Journalist
+		case 0: // Sargeant Death - The Balance Journalist
 			return 3; // Contributors
 		break;
 
@@ -386,6 +386,7 @@ Color CHudChat::GetClientColor( int clientIndex )
 		{
 		case TF_TEAM_RED	: return pScheme->GetColor( "TFColors.ChatTextRed", g_ColorRed );
 		case TF_TEAM_BLUE	: return pScheme->GetColor( "TFColors.ChatTextBlue", g_ColorBlue );
+		case TF_TEAM_PURPLE: return pScheme->GetColor("TFColors.ChatTextPurple", g_ColorPurple);
 		default	: return g_ColorGrey;
 		}
 	}

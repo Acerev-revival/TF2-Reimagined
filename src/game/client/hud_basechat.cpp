@@ -49,6 +49,7 @@ ConVar bf_sound_chatping_file ( "bf_sound_chatping_file", "HudChat.Message", FCV
 const int kChatFilterVersion = 1;
 
 Color g_ColorBlue( 153, 204, 255, 255 );
+Color g_ColorPurple( 114, 0, 255, 255);
 Color g_ColorRed( 255, 63, 63, 255 );
 Color g_ColorGreen( 153, 255, 153, 255 );
 Color g_ColorDarkGreen( 64, 255, 64, 255 );

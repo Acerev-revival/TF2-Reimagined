@@ -39,6 +39,7 @@ namespace vgui
 #define CHAT_HISTORY_ALPHA 127
 
 extern Color g_ColorBlue;
+extern Color g_ColorPurple;
 extern Color g_ColorRed;
 extern Color g_ColorGreen;
 extern Color g_ColorDarkGreen;

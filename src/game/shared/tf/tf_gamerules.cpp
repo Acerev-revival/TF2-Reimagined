@@ -10006,14 +10006,22 @@ void cc_ShowRespawnTimes()
 		float flBlueScalar = pRules->GetRespawnTimeScalar( TF_TEAM_BLUE );
 		float flNextBlueRespawn = pRules->GetNextRespawnWave( TF_TEAM_BLUE, NULL ) - gpGlobals->curtime;
 
+		float flPurpleMin = (pRules->m_TeamRespawnWaveTimes[TF_TEAM_PURPLE] >= 0 ? pRules->m_TeamRespawnWaveTimes[TF_TEAM_PURPLE] : mp_respawnwavetime.GetFloat());
+		float flPurpleScalar = pRules->GetRespawnTimeScalar(TF_TEAM_PURPLE);
+		float flNextPurpleRespawn = pRules->GetNextRespawnWave(TF_TEAM_PURPLE, NULL) - gpGlobals->curtime;
+		
 		char tempRed[128];
 		Q_snprintf( tempRed, sizeof( tempRed ),   "Red:  Min Spawn %2.2f, Scalar %2.2f, Next Spawn In: %.2f\n", flRedMin, flRedScalar, flNextRedRespawn );
 
 		char tempBlue[128];
 		Q_snprintf( tempBlue, sizeof( tempBlue ), "Blue: Min Spawn %2.2f, Scalar %2.2f, Next Spawn In: %.2f\n", flBlueMin, flBlueScalar, flNextBlueRespawn );
 
+		char tempPurple[128];
+		Q_snprintf(tempPurple, sizeof(tempPurple), "Purple: Min Spawn %2.2f, Scalar %2.2f, Next Spawn In: %.2f\n", flPurpleMin, flBlueScalar, flNextPurpleRespawn);
+
 		ClientPrint( pPlayer, HUD_PRINTTALK, tempRed );
 		ClientPrint( pPlayer, HUD_PRINTTALK, tempBlue );
+		ClientPrint(pPlayer, HUD_PRINTTALK, tempPurple);
 	}
 }
 

@@ -7779,26 +7779,33 @@ C_BaseObject *C_TFPlayer::GetObjectOfType( int iObjectType, int iObjectMode ) co
 // Input  : collisionGroup - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool C_TFPlayer::ShouldCollide( int collisionGroup, int contentsMask ) const
+bool C_TFPlayer::ShouldCollide(int collisionGroup, int contentsMask) const
 {
-	if ( ( ( collisionGroup == COLLISION_GROUP_PLAYER_MOVEMENT ) && tf_avoidteammates.GetBool() ) ||
-		collisionGroup == TFCOLLISION_GROUP_ROCKETS )
+	if (((collisionGroup == COLLISION_GROUP_PLAYER_MOVEMENT) && tf_avoidteammates.GetBool()) ||
+		collisionGroup == TFCOLLISION_GROUP_ROCKETS)
 	{
-		switch( GetTeamNumber() )
+		switch (GetTeamNumber())
 		{
 		case TF_TEAM_RED:
-			if ( !( contentsMask & CONTENTS_REDTEAM ) )
+			if (!(contentsMask & CONTENTS_REDTEAM))
 				return false;
 			break;
 
 		case TF_TEAM_BLUE:
-			if ( !( contentsMask & CONTENTS_BLUETEAM ) )
+			if (!(contentsMask & CONTENTS_BLUETEAM))
+				return false;
+			break;
+
+		case TF_TEAM_PURPLE:
+			if (!(contentsMask & CONTENTS_PURPLETEAM))
 				return false;
 			break;
 		}
 	}
-	return BaseClass::ShouldCollide( collisionGroup, contentsMask );
+
+	return BaseClass::ShouldCollide(collisionGroup, contentsMask);
 }
+
 
 float C_TFPlayer::GetPercentInvisible( void )
 {

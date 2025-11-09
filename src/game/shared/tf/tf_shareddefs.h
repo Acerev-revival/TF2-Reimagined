@@ -228,7 +228,7 @@ enum ETFClass
 };
 
 inline bool IsValidTFPlayerClass( int iClass ) { return iClass >= TF_FIRST_NORMAL_CLASS && iClass < TF_LAST_NORMAL_CLASS; }
-inline bool IsValidTFTeam( int iTeam ) { return iTeam == TF_TEAM_RED || iTeam == TF_TEAM_BLUE; }
+inline bool IsValidTFTeam(int iTeam) { return iTeam == TF_TEAM_RED || iTeam == TF_TEAM_BLUE || iTeam == TF_TEAM_PURPLE; }
 
 #define FOR_EACH_NORMAL_PLAYER_CLASS( _i ) for ( int _i = TF_FIRST_NORMAL_CLASS; _i < TF_LAST_NORMAL_CLASS; _i++ )
 

@@ -173,6 +173,7 @@ public:
 
 private:
 	virtual void PlayActiveSound();
+	void ApplyTeamColorTint(void);
 	void ResetHealingTargets( void );
 
 protected:

@@ -273,6 +273,10 @@ void CTFStreakNotice::StreakEnded( CTFPlayerShared::ETFStreak eStreakType, int i
 	{
 		cKillerColor = COLOR_RED;
 	}
+	else if (g_PR->GetTeam(iKillerID) == TF_TEAM_PURPLE)
+	{
+		cKillerColor = COLOR_PURPLE;
+	}
 	else if ( g_PR->GetTeam( iKillerID ) == TF_TEAM_BLUE )
 	{
 		cKillerColor = COLOR_BLUE;
@@ -282,6 +286,10 @@ void CTFStreakNotice::StreakEnded( CTFPlayerShared::ETFStreak eStreakType, int i
 	if ( g_PR->GetTeam( iVictimID ) == TF_TEAM_RED )
 	{
 		cVictimColor = COLOR_RED;
+	}
+	else if (g_PR->GetTeam(iKillerID) == TF_TEAM_PURPLE)
+	{
+		cKillerColor = COLOR_PURPLE;
 	}
 	else if ( g_PR->GetTeam( iVictimID ) == TF_TEAM_BLUE )
 	{
@@ -484,6 +492,10 @@ void CTFStreakNotice::StreakUpdated( CTFPlayerShared::ETFStreak eStreakType, int
 	if ( g_PR->GetTeam( iKillerID ) == TF_TEAM_RED )
 	{
 		cTeamColor = COLOR_RED;
+	}
+	else if (g_PR->GetTeam(iKillerID) == TF_TEAM_PURPLE)
+	{
+		cTeamColor = COLOR_PURPLE;
 	}
 	else if ( g_PR->GetTeam( iKillerID ) == TF_TEAM_BLUE )
 	{
@@ -1593,18 +1605,17 @@ Color CTFHudDeathNotice::GetTeamColor( int iTeamNumber, bool bLocalPlayerInvolve
 	{
 	case TF_TEAM_BLUE:
 		return m_clrBlueText;
-		break;
 	case TF_TEAM_RED:
 		return m_clrRedText;
-		break;
+	case TF_TEAM_PURPLE:
+		return m_clrPurpleText;
 	case TEAM_UNASSIGNED:
-		if ( bLocalPlayerInvolved )
+		if (bLocalPlayerInvolved)
 			return m_clrLocalPlayerText;
 		else
-			return Color( 255, 255, 255, 255 );
-		break;
+			return Color(255, 255, 255, 255);
 	case TF_TEAM_HALLOWEEN:
-		if ( TFGameRules() && ( TFGameRules()->IsHalloweenScenario( CTFGameRules::HALLOWEEN_SCENARIO_LAKESIDE ) || TFGameRules()->IsHalloweenScenario( CTFGameRules::HALLOWEEN_SCENARIO_HIGHTOWER ) ) )
+		if (TFGameRules() && (TFGameRules()->IsHalloweenScenario(CTFGameRules::HALLOWEEN_SCENARIO_LAKESIDE) || TFGameRules()->IsHalloweenScenario(CTFGameRules::HALLOWEEN_SCENARIO_HIGHTOWER)))
 		{
 			return m_clrGreenText;
 		}
@@ -1614,9 +1625,8 @@ Color CTFHudDeathNotice::GetTeamColor( int iTeamNumber, bool bLocalPlayerInvolve
 		}
 		break;
 	default:
-		AssertOnce( false );	// invalid team
-		return Color( 255, 255, 255, 255 );
-		break;
+		AssertOnce(false);    // invalid team
+		return Color(255, 255, 255, 255);
 	}
 }
 

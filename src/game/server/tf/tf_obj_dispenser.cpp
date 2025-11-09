@@ -189,15 +189,43 @@ void CObjectDispenser::DestroyObject( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+void CObjectDispenser::ApplyTeamColorTint(void)
+{
+	int iTeam = GetTeamNumber();
+
+	if (iTeam == TF_TEAM_PURPLE)
+	{
+		// Purple tint (adjust RGB values to your preferred shade)
+		SetRenderColor(128, 0, 128);  // Standard purple
+		// Or use: SetRenderColor( 148, 0, 211 ); // Darker purple
+		// Or use: SetRenderColor( 138, 43, 226 ); // Blue-violet
+	}
+	else if (iTeam == TF_TEAM_RED)
+	{
+		SetRenderColor(255, 255, 255); // No tint for red (default)
+	}
+	else if (iTeam == TF_TEAM_BLUE)
+	{
+		SetRenderColor(255, 255, 255); // No tint for blue (default)
+	}
+	else
+	{
+		SetRenderColor(255, 255, 255); // Default white (no tint)
+	}
+}
+
 void CObjectDispenser::Spawn()
 {
-	SetModel( GetPlacementModel() );
+	SetModel(GetPlacementModel());
 
-	m_iState.Set( DISPENSER_STATE_IDLE );
+	m_iState.Set(DISPENSER_STATE_IDLE);
 
-	SetTouch( &CObjectDispenser::Touch );
+	SetTouch(&CObjectDispenser::Touch);
 
 	BaseClass::Spawn();
+
+	// Apply team color after spawn
+	ApplyTeamColorTint();
 }
 
 //-----------------------------------------------------------------------------
@@ -373,17 +401,20 @@ void CObjectDispenser::FinishUpgrading( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CObjectDispenser::SetModel( const char *pModel )
+void CObjectDispenser::SetModel(const char* pModel)
 {
-	BaseClass::SetModel( pModel );
+	BaseClass::SetModel(pModel);
 
-		bool bShouldBeMini = ShouldBeMiniBuilding(GetOwner());
+	bool bShouldBeMini = ShouldBeMiniBuilding(GetOwner());
 
-		// Reset this after model change
-		UTIL_SetSize(this,
-			bShouldBeMini ? MINI_DISPENSER_MINS : DISPENSER_MINS,
-			bShouldBeMini ? MINI_DISPENSER_MAXS : DISPENSER_MAXS);
+	// Reset this after model change
+	UTIL_SetSize(this,
+		bShouldBeMini ? MINI_DISPENSER_MINS : DISPENSER_MINS,
+		bShouldBeMini ? MINI_DISPENSER_MAXS : DISPENSER_MAXS);
 	ResetSequenceInfo();
+
+	// Apply team color tint
+	ApplyTeamColorTint();
 }
 
 //-----------------------------------------------------------------------------
