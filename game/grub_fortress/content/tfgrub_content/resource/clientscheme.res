@@ -142,21 +142,22 @@ Scheme
 		"ItemLimitedQuantity"					"225 209 0 255"
 		
 		"QualityColorNormal"					"178 178 178 255"
-		"QualityColorrarity1"					"77 116 85 255"
-		"QualityColorrarity2"					"141 131 75 255"
-		"QualityColorrarity3"					"204 204 250 255"
-		"QualityColorrarity4"					"134 80 172 255"
-		"QualityColorVintage"					"71 98 145 255"
-		"QualityColorUnique"					"255 215 0 255"
-		"QualityColorCommunity"					"112 176 74 255"
-		"QualityColorDeveloper"					"165 15 121 255"
-		"QualityColorSelfMade"					"112 176 74 255"
-		"QualityColorCustomized"				"71 98 145 255"
-		"QualityColorStrange"					"207 106 50 255"
-		"QualityColorCompleted"					"134 80 172 255"
-		"QualityColorHaunted"					"56 243 171 255"
-		"QualityColorCollectors"				"170 0 0 255"
-		"QualityColorPaintkitWeapon"			"250 250 250 255"
+		"QualityColorrarity1"					"178 178 178 255"
+		"QualityColorrarity2"					"178 178 178 255"
+		"QualityColorrarity3"					"178 178 178 255"
+		"QualityColorrarity4"					"178 178 178 255"
+		"QualityColorVintage"					"178 178 178 255"
+		"QualityColorUnique"					"178 178 178 255"
+		"QualityColorCommunity"					"178 178 178 255"
+		"QualityColorDeveloper"					"178 178 178 255"
+		"QualityColorSelfMade"					"178 178 178 255"
+		"QualityColorCustomized"				"178 178 178 255"
+		"QualityColorStrange"					"178 178 178 255"
+		"QualityColorCompleted"					"178 178 178 255"
+		"QualityColorHaunted"					"178 178 178 255"
+		"QualityColorCollectors"				"178 178 178 255"
+		"QualityColorPaintkitWeapon"			"178 178 178 255"
+		"QualityColorBeta"						"178 178 178 255"
 
 		"ItemRarityDefault"						"131 126 119 255"
 		"ItemRarityCommon"						"176 195 217 255"
@@ -175,21 +176,22 @@ Scheme
 		"ItemRarityAncient_GreyedOut"			"78 25 25 255"
 		
 		"QualityColorNormal_GreyedOut"			"44 44 44 255"
-		"QualityColorrarity1_GreyedOut"			"20 29 21 255"
-		"QualityColorrarity2_GreyedOut"			"35 33 19 255"
-		"QualityColorrarity3_GreyedOut"			"51 51 62 255"
-		"QualityColorrarity4_GreyedOut"			"36 20 43 255"
-		"QualityColorVintage_GreyedOut"			"18 25 36 255"
-		"QualityColorUnique_GreyedOut"			"64 54 0  255"
-		"QualityColorCommunity_GreyedOut"		"28 44 19 255"
-		"QualityColorDeveloper_GreyedOut"		"41 4  30  255"
-		"QualityColorSelfMade_GreyedOut"		"28 44 74 255"
-		"QualityColorCustomized_GreyedOut"		"71 98 19 255"
-		"QualityColorStrange_GreyedOut"			"52 27 13 255"
-		"QualityColorCompleted_GreyedOut"		"34 20 43 255"
-		"QualityColorHaunted_GreyedOut"			"14 61 43 255"
-		"QualityColorCollectors_GreyedOut"		"60 0 0 255"
-		"QualityColorPaintkitWeapon_GreyedOut"	"60 60 60 255"
+		"QualityColorrarity1_GreyedOut"			"44 44 44 255"
+		"QualityColorrarity2_GreyedOut"			"44 44 44 255"
+		"QualityColorrarity3_GreyedOut"			"44 44 44 255"
+		"QualityColorrarity4_GreyedOut"			"44 44 44 255"
+		"QualityColorVintage_GreyedOut"			"44 44 44 255"
+		"QualityColorUnique_GreyedOut"			"44 44 44 255"
+		"QualityColorCommunity_GreyedOut"		"44 44 44 255"
+		"QualityColorDeveloper_GreyedOut"		"44 44 44 255"
+		"QualityColorSelfMade_GreyedOut"		"44 44 44 255"
+		"QualityColorCustomized_GreyedOut"		"44 44 44 255"
+		"QualityColorStrange_GreyedOut"			"44 44 44 255"
+		"QualityColorCompleted_GreyedOut"		"44 44 44 255"
+		"QualityColorHaunted_GreyedOut"			"44 44 44 255"
+		"QualityColorCollectors_GreyedOut"		"44 44 44 255"
+		"QualityColorPaintkitWeapon_GreyedOut"	"44 44 44 255"
+		"QualityColorBeta_GreyedOut"			"44 44 44 255"
 		
 		"SaleGreen"								"76 107 34 255"
 
@@ -215,6 +217,18 @@ Scheme
 	// controls use these to determine their settings
 	BaseSettings
 	{
+		// Radial menu changes 
+		////// Fortress connected custom colors //////////
+		"Rosetta.DefaultFgColor"		"White"
+		"Rosetta.DefaultBgColor"			"Blank"
+		"Rosetta.ArmedBgColor"			"Blank"
+		"Rosetta.DisabledBgColor"			"Blank"
+		"Rosetta.DisabledBorderColor"		"Blank"
+		"Rosetta.LineColor"			"192 192 192 128"
+		"Rosetta.DrawBorder"				"0"
+		"Rosetta.DefaultFont"				RosettaSmall
+		"Rosetta.ArmedFont"				RosettaLarge
+		
 		// vgui_controls color specifications
 		ReplayBrowser.BgColor								"DarkBrown"
 		ReplayBrowser.Details.TitleEdit.Carat.FgColor		"LightRed"
@@ -1139,6 +1153,30 @@ Scheme
 				"weight"	"500"
 				"additive"	"0"
 				"antialias" "1"
+			}
+		}
+		//RADIAL MENU CHANGES
+		// Uses TF2 fonts. use your own if you'd like
+		"RosettaSmall"
+		{
+			"1"
+			{
+				"Name"			"TF2 Secondary"
+				"tall"			"14"
+				"weight"	"100"
+				"antialias" "1"
+				//"dropshadow"	"1"
+			}
+		}
+		"RosettaLarge"
+		{
+			"1"
+			{
+				"Name"			"TF2 Secondary"
+				"tall"			"18"
+				"weight"	"100"
+				"antialias" "1"
+				//"dropshadow"	"1"
 			}
 		}
 		GameUIButtons
@@ -3564,8 +3602,8 @@ Scheme
 			"image"					"loadout_rect"
 			"src_corner_height"		"24"				// pixels inside the image
 			"src_corner_width"		"24"
-			"draw_corner_width"		"5"				// screen size of the corners ( and sides ), proportional
-			"draw_corner_height" 	"5"	
+			"draw_corner_width"		"11"				// screen size of the corners ( and sides ), proportional
+			"draw_corner_height" 	"11"	
 		}
 		Econ.Button.Border.Default
 		{
@@ -3586,8 +3624,8 @@ Scheme
 			"image"					"loadout_rect_mouseover"
 			"src_corner_height"		"24"				// pixels inside the image
 			"src_corner_width"		"24"
-			"draw_corner_width"		"5"				// screen size of the corners ( and sides ), proportional
-			"draw_corner_height" 	"5"	
+			"draw_corner_width"		"11"				// screen size of the corners ( and sides ), proportional
+			"draw_corner_height" 	"11"	
 		}
 		LoadoutItemPopupBorder
 		{
@@ -4990,6 +5028,17 @@ Scheme
 			"backgroundtype"		"2"
 			
 			"image"					"button_central_hover"
+			"src_corner_height"		"32"				// pixels inside the image
+			"src_corner_width"		"32"
+			"draw_corner_width"		"4"				// screen size of the corners ( and sides ), proportional
+			"draw_corner_height" 	"4"	
+		}
+		MainMenuButtonArmed_TFGrub
+		{
+			"bordertype"			"scalable_image"
+			"backgroundtype"		"2"
+			
+			"image"					"button_central_hover_tfgrub"
 			"src_corner_height"		"32"				// pixels inside the image
 			"src_corner_width"		"32"
 			"draw_corner_width"		"4"				// screen size of the corners ( and sides ), proportional

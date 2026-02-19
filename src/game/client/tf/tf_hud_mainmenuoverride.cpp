@@ -943,7 +943,19 @@ void CHudMainMenuOverride::ApplySchemeSettings(IScheme* scheme)
 
 	RemoveAllMenuEntries();
 
-	LoadControlSettings("resource/UI/MainMenu.res", NULL, NULL, pConditions);
+	const char* pszMenuRes = "resource/UI/MainMenu_Newer.res";
+
+	if ( CommandLine()->FindParm( "-oldermenu" ) != 0 )
+	{
+		pszMenuRes = "resource/UI/MainMenu.res";
+	}
+
+	else if ( CommandLine()->FindParm( "-oldmenu" ) != 0 )
+	{
+		pszMenuRes = "resource/UI/MainMenu_New.res";
+	}
+
+	LoadControlSettings(pszMenuRes, NULL, NULL, pConditions);
 
 	BaseClass::ApplySchemeSettings(vgui::scheme()->GetIScheme(pScheme));
 
@@ -1177,16 +1189,29 @@ void CHudMainMenuOverride::LoadMenuEntries(void)
 {
 	KeyValues* datafile = new KeyValues("GameMenu");
 	datafile->UsesEscapeSequences(true);	// VGUI uses escape sequences
-	bool bLoaded = datafile->LoadFromFile(g_pFullFileSystem, "Resource/GameMenu_Grub.res", "custom_mod");
+	const char* pszMenuFile = "Resource/GameMenu_Grub_Newer.res";
+
+	if ( CommandLine()->FindParm( "-oldermenu" ) != 0 )
+	{
+		pszMenuFile = "Resource/GameMenu_Grub.res";
+	}
+
+	else if ( CommandLine()->FindParm( "-oldmenu" ) != 0 )
+	{
+		pszMenuFile = "Resource/GameMenu_Grub_New.res";
+	}
+
+
+	bool bLoaded = datafile->LoadFromFile( g_pFullFileSystem, pszMenuFile, "custom_mod" );
 	if (!bLoaded)
 	{
-		bLoaded = datafile->LoadFromFile(g_pFullFileSystem, "Resource/GameMenu_Grub.res", "vgui");
-		if (!bLoaded)
+		bLoaded = datafile->LoadFromFile( g_pFullFileSystem, pszMenuFile, "vgui" );
+		if ( !bLoaded )
 		{
 			// only allow to load loose files when using insecure mode
 			//if (CommandLine()->FindParm("-insecure"))
 			//{
-			bLoaded = datafile->LoadFromFile(g_pFullFileSystem, "Resource/GameMenu_Grub.res");
+			bLoaded = datafile->LoadFromFile( g_pFullFileSystem, pszMenuFile );
 			//}
 		}
 	}
@@ -1303,7 +1328,7 @@ void CHudMainMenuOverride::PerformLayout(void)
 
 		if (bFirstButton && m_pMMButtonEntries[i].pPanel != NULL)
 		{
-			m_pMMButtonEntries[i].pPanel->NavigateTo();
+			m_pMMButtonEntries[i].pPanel->RequestFocus();
 			bFirstButton = false;
 		}
 
@@ -2343,7 +2368,8 @@ void CHudMainMenuOverride::OnCommand(const char* command)
 		}
 		return;
 	}
-	else if (!Q_stricmp(command, "view_newuser_forums"))
+	//Custom Fortress 2 - MOTD 2nd Button
+	else if ( !Q_stricmp( command, "motd_viewurl_secondary" ) )
 	{
 		HideHighlight(MMHA_NEWUSERFORUM);
 
@@ -2561,6 +2587,10 @@ void CHudMainMenuOverride::OnCommand(const char* command)
 	else if (!Q_stricmp(command, "openmodcredits"))
 	{
 		GetClientModeTFNormal()->GameUI()->SendMainMenuCommand("engine openmodcredits");
+	}
+	else if (!Q_stricmp(command, "modcreateserver"))
+	{
+		GetClientModeTFNormal()->GameUI()->SendMainMenuCommand("engine modcreateserver");
 	}
 	else
 	{
@@ -3354,3 +3384,27 @@ void CHudMainMenuOverride::GenerateIcons(bool bLarge, int min /*= -1*/, int max 
 	m_bGeneratingLargeTestIcons = bLarge;
 }
 #endif
+
+CON_COMMAND(showdisconnectconfirmdialog, "Show a disconnect confirmation dialog")
+{
+	ShowConfirmDialog( "#GameUI_Disconnect",
+		"#GameUI_DisconnectConfirmationText",
+		"#TF_Coach_Yes",
+		"#TF_Coach_No", []( bool bConfirmed, void* pContext )
+		{
+			if ( bConfirmed )
+				engine->ClientCmd_Unrestricted( "disconnect\n" );
+		} );
+}
+
+CON_COMMAND(showquitconfirmdialog, "Show a quit confirmation dialog")
+{
+	ShowConfirmDialog( "#GameUI_Quit",
+		"#GameUI_QuitConfirmationText",
+		"#TF_Coach_Yes",
+		"#TF_Coach_No", []( bool bConfirmed, void* pContext )
+		{
+			if ( bConfirmed )
+				engine->ClientCmd_Unrestricted( "quit\n" );
+		} );
+}

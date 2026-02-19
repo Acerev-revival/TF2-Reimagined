@@ -476,7 +476,7 @@ void C_ObjectSentrygun::CheckNearMiss( Vector vecStart, Vector vecEnd )
 	dist = vecPlayerPos.DistTo( vecClosestPoint );
 	if ( dist > 120 )
 	{
-		StopSound( "Building_Sentrygun.ShaftLaserPass" );
+		pLocalPlayer->StopSound( "Building_Sentrygun.ShaftLaserPass" );
 		return;
 	}
 
@@ -758,9 +758,9 @@ const char* C_ObjectSentrygun::GetStatusName() const
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-C_SentrygunShield* C_SentrygunShield::Create( const char* pszModelName )
+C_SentrygunShield *C_SentrygunShield::Create( const char *pszModelName )
 {
-	C_SentrygunShield* pShield = new C_SentrygunShield();
+	C_SentrygunShield *pShield = new C_SentrygunShield();
 	if ( !pShield )
 		return NULL;
 

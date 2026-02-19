@@ -98,12 +98,14 @@ ConVar tf_dingaling_lasthit_pitchmaxdmg( "tf_dingaling_lasthit_pitchmaxdmg", "10
 ConVar tf_dingaling_lasthit_pitch_override( "tf_dingaling_lasthit_pitch_override", "-1", FCVAR_NONE, "If set, pitch for last hit sounds." );
 
 ConVar tf_dingalingaling_repeat_delay( "tf_dingalingaling_repeat_delay", "0.0", FCVAR_ARCHIVE, "Desired repeat delay of the hit sound.  Set to 0 to play a sound for every instance of damage dealt.", true, 0.f, false, 0.f );
-ConVar bf_metal_allclass("bf_metal_allclass", "0", FCVAR_CHEAT, "Everyone uses metal");
+ConVar cf_metal_allclass("cf_metal_allclass", "0", FCVAR_CHEAT, "Everyone uses metal");
 
 ConVar hud_damagemeter( "hud_damagemeter", "0", FCVAR_CHEAT, "Display damage-per-second information in the lower right corner of the screen." );
 ConVar hud_damagemeter_period( "hud_damagemeter_period", "0", FCVAR_NONE, "When set to zero, average damage-per-second across all recent damage events, otherwise average damage across defined period (number of seconds)." );
 ConVar hud_damagemeter_ooctimer( "hud_damagemeter_ooctimer", "1", FCVAR_NONE, "How many seconds after the last damage event before we consider the player out of combat." );
 ConVar hud_damagemeter_report( "hud_damagemeter_report", "1", FCVAR_NONE, "Display end-of-combat DPS result (from first damage even to last before OOC timer hit)." );
+
+extern ConVar tfgrub_mirrored;
 
 struct hitsound_params_t
 {
@@ -201,7 +203,7 @@ public:
 	virtual const char *GetResFileName( void ) { return "resource/UI/HudAccountPanel.res"; }
 
 protected:
-	virtual Color GetColor( const account_delta_t::eAccountDeltaType_t& type, const int iDeltaValue = 0 );
+	virtual Color GetColor( const account_delta_t::eAccountDeltaType_t &type, const int iDeltaValue = 0 );
 
 	CUtlVector <account_delta_t> m_AccountDeltaItems;
 
@@ -277,7 +279,7 @@ public:
 	virtual bool ShouldDraw( void ) OVERRIDE
 	{
 		C_TFPlayer *pPlayer = C_TFPlayer::GetLocalTFPlayer();
-		if ( !bf_metal_allclass.GetBool() )
+		if ( !cf_metal_allclass.GetBool() )
 		{
 			if (!pPlayer || !pPlayer->IsAlive() || !pPlayer->IsPlayerClass(TF_CLASS_ENGINEER))
 			{
@@ -1044,7 +1046,7 @@ account_delta_t *CAccountPanel::OnAccountValueChanged( int iOldValue, int iNewVa
 	return NULL;
 }
 
-Color CAccountPanel::GetColor( const account_delta_t::eAccountDeltaType_t& type, const int iDeltaValue )
+Color CAccountPanel::GetColor( const account_delta_t::eAccountDeltaType_t &type, const int iDeltaValue )
 {
 	if ( type == account_delta_t::ACCOUNT_DELTA_BONUS_POINTS )
 	{
@@ -1052,7 +1054,7 @@ Color CAccountPanel::GetColor( const account_delta_t::eAccountDeltaType_t& type,
 	}
 	else if ( type == account_delta_t::ACCOUNT_DELTA_HEALING )
 	{
-		return iDeltaValue < 0 ? m_DeltaNegativeColor : m_DeltaPositiveColor;
+		return ( iDeltaValue < 0 ) ? m_DeltaNegativeColor : m_DeltaPositiveColor;
 	}
 	else if ( type == account_delta_t::ACCOUNT_DELTA_DAMAGE )
 	{
@@ -1130,6 +1132,10 @@ void CAccountPanel::Paint( void )
 
 				flXPos = iX;
 				flYPos = iY;
+				if (tfgrub_mirrored.GetBool())
+				{
+					flXPos = ScreenWidth() - iX;
+				}
 			}
 
 			// If we have a background texture, then draw it!

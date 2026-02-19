@@ -39,6 +39,11 @@
 #include "bot/tf_bot.h"
 #endif
 
+#ifdef CLIENT_DLL
+#include "c_tf_player.h"
+#include "econ/econ_notifications.h"
+#endif 
+
 #if defined( _WIN32 ) || defined( POSIX )
 #include "vscript_server_nut.h"
 #endif
@@ -77,6 +82,7 @@ ConVar script_connect_debugger_on_mapspawn( "script_connect_debugger_on_mapspawn
 
 ConVar script_attach_debugger_at_startup( "script_attach_debugger_at_startup", "0" );
 ConVar script_break_in_native_debugger_on_error( "script_break_in_native_debugger_on_error", "0" );
+ConVar cf_vscript_allow_notifications( "cf_vscript_allow_notifications", "1", FCVAR_NOTIFY | FCVAR_REPLICATED, "Max time after a voice command until player can do another one");
 
 #define VSCRIPT_CONVAR_ALLOWLIST_NAME "cfg/vscript_convar_allowlist.txt"
 
@@ -2014,6 +2020,40 @@ static void Script_ClientPrint( HSCRIPT hPlayer, int iDest, const char *pText )
 	}
 }
 
+
+static void Script_SendNotification( HSCRIPT hPlayer, float flLifetime, const char *pText, const char *iszSound )
+{
+
+	if ( !cf_vscript_allow_notifications.GetBool() ) 
+	{
+		Msg( "Server needs cf_vscript_allow_notifications set to 1 for sending custom notifications to players\n" );
+		return;
+	}
+
+
+	CBaseEntity *pBaseEntity = ToEnt( hPlayer );
+	CBasePlayer *pPlayer = dynamic_cast<CBasePlayer*>( pBaseEntity );
+	CRecipientFilter filter;
+	
+	if( hPlayer )
+	{
+		filter.AddRecipient( pPlayer );
+	}
+	else
+	{
+		filter.AddAllPlayers();
+	}
+
+	filter.MakeReliable();
+
+	UserMessageBegin( filter, "VS_SendNotification" );
+		WRITE_FLOAT( flLifetime );
+		WRITE_STRING( pText );
+		WRITE_STRING( iszSound );
+	MessageEnd();
+}
+
+
 static void ScriptEmitAmbientSoundOn( const char *soundname, float volume, int soundlevel, int pitch, HSCRIPT entity )
 {
 	if ( !soundname || !*soundname )
@@ -2082,6 +2122,11 @@ static void Script_ScreenFade( HSCRIPT hEntity, int r, int g, int b, int a, floa
 	{
 		UTIL_ScreenFadeAll( color, fadeTime, fadeHold, flags );
 	}
+}
+
+static void Script_ChangeLevel( const char* iszMapName, int r, int g, int b, int a, float fadeTime, float fadeHold, int flags )
+{
+	engine->ChangeLevel( iszMapName, NULL );
 }
 
 int Script_PrecacheModel( const char *modelname )
@@ -2772,12 +2817,13 @@ bool VScriptServerInit()
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_GetFrameCount, "GetFrameCount", "Returns the engines current frame count" );
 
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_ClientPrint, "ClientPrint", "Print a client message" );
+				ScriptRegisterFunctionNamed( g_pScriptVM, Script_SendNotification, "SendNotification", "Send a notification" );
 				ScriptRegisterFunctionNamed( g_pScriptVM, ScriptEmitAmbientSoundOn, "EmitAmbientSoundOn", "Play named ambient sound on an entity." );
 				ScriptRegisterFunctionNamed( g_pScriptVM, ScriptStopAmbientSoundOn, "StopAmbientSoundOn", "Stop named ambient sound on an entity." );
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_SetFakeClientConVarValue, "SetFakeClientConVarValue", "Sets a USERINFO client ConVar for a fakeclient" );
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_ScreenShake, "ScreenShake", "Start a screenshake with the following parameters. vecCenter, flAmplitude, flFrequency, flDuration, flRadius, eCommand( SHAKE_START = 0, SHAKE_STOP = 1 ), bAirShake" );
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_ScreenFade, "ScreenFade", "Start a screenfade with the following parameters. player, red, green, blue, alpha, flFadeTime, flFadeHold, flags" );
-//				ScriptRegisterFunctionNamed( g_pScriptVM, Script_ChangeLevel, "ChangeLevel", "Tell engine to change level." );
+				ScriptRegisterFunctionNamed( g_pScriptVM, Script_ChangeLevel, "ChangeLevel", "Tell engine to change level." );
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_PrecacheModel, "PrecacheModel", "Precache a model. Returns the modelindex." );
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_PrecacheSound, "PrecacheSound", "Precache a sound." );
 				ScriptRegisterFunctionNamed( g_pScriptVM, Script_PrecacheScriptSound, "PrecacheScriptSound", "Precache a sound." );
@@ -3029,6 +3075,7 @@ DECLARE_SCRIPT_CONST_NAMED( FTFBotAttributeType, "BLAST_IMMUNE", CTFBot::Attribu
 DECLARE_SCRIPT_CONST_NAMED( FTFBotAttributeType, "FIRE_IMMUNE", CTFBot::AttributeType::FIRE_IMMUNE )
 DECLARE_SCRIPT_CONST_NAMED( FTFBotAttributeType, "PARACHUTE", CTFBot::AttributeType::PARACHUTE )
 DECLARE_SCRIPT_CONST_NAMED( FTFBotAttributeType, "PROJECTILE_SHIELD", CTFBot::AttributeType::PROJECTILE_SHIELD )
+DECLARE_SCRIPT_CONST_NAMED( FTFBotAttributeType, "USE_DIFFICULTY_BASED_AIM", CTFBot::AttributeType::USE_DIFFICULTY_BASED_AIM )
 REGISTER_SCRIPT_CONST_TABLE( FTFBotAttributeType )
 
 DECLARE_SCRIPT_CONST_TABLE( ETFBotDifficultyType )
@@ -3131,6 +3178,7 @@ DECLARE_SCRIPT_CONST( FButtons, IN_BULLRUSH )
 DECLARE_SCRIPT_CONST( FButtons, IN_GRENADE1 )
 DECLARE_SCRIPT_CONST( FButtons, IN_GRENADE2 )
 DECLARE_SCRIPT_CONST( FButtons, IN_ATTACK3 )
+DECLARE_SCRIPT_CONST( FButtons, IN_TYPING )
 REGISTER_SCRIPT_CONST_TABLE( FButtons )
 
 DECLARE_SCRIPT_CONST_TABLE( FHideHUD )
@@ -3584,8 +3632,13 @@ DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_SLAP_KILL )
 DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_CROC )
 DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_TAUNTATK_GASBLAST )
 DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_AXTINGUISHER_BOOSTED )
+DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_TAUNTATK_TRICKSHOT )
+
+// START OF BF2 SPECIFIC DMG
 DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_DECAPITATION_BOSS_HAMMER ) // BF2 - Hwn2014 HHH
 DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_MVM_BOSS_TANK ) 
+// END OF BF2 SPECIFIC DMG
+
 DECLARE_SCRIPT_CONST( ETFDmgCustom, TF_DMG_CUSTOM_END )
 REGISTER_SCRIPT_CONST_TABLE( ETFDmgCustom )
 

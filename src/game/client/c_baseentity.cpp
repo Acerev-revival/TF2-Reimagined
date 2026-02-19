@@ -87,7 +87,7 @@ C_BasePlayer *C_BaseEntity::m_pPredictionPlayer = NULL;
 bool C_BaseEntity::s_bAbsQueriesValid = true;
 bool C_BaseEntity::s_bAbsRecomputationEnabled = true;
 bool C_BaseEntity::s_bInterpolate = true;
-extern ConVar bf_player_parentables;
+extern ConVar cf_player_parentables;
 
 bool C_BaseEntity::sm_bDisableTouchFuncs = false;	// Disables PhysicsTouch and PhysicsStartTouch function calls
 
@@ -458,6 +458,7 @@ BEGIN_RECV_TABLE_NOBASE(C_BaseEntity, DT_BaseEntity)
 	RecvPropInt(RECVINFO(m_clrRender)),
 	RecvPropInt(RECVINFO(m_iTeamNum)),
 	RecvPropInt(RECVINFO(m_CollisionGroup)),
+	RecvPropFloat(RECVINFO(m_flGravity)),
 	RecvPropFloat(RECVINFO(m_flElasticity)),
 	RecvPropFloat(RECVINFO(m_flShadowCastDistance)),
 	RecvPropEHandle( RECVINFO(m_hOwnerEntity) ),
@@ -540,7 +541,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( C_BaseEntity )
 //	DEFINE_FIELD( m_flLastMessageTime, FIELD_FLOAT ),
 	DEFINE_FIELD( m_vecBaseVelocity, FIELD_VECTOR ),
 	DEFINE_FIELD( m_iEFlags, FIELD_INTEGER ),
-	DEFINE_FIELD( m_flGravity, FIELD_FLOAT ),
+	DEFINE_PRED_FIELD( m_flGravity, FIELD_FLOAT, FTYPEDESC_INSENDTABLE | FTYPEDESC_NOERRORCHECK ),
 //	DEFINE_FIELD( m_ModelInstance, FIELD_SHORT ),
 	DEFINE_FIELD( m_flProxyRandomValue, FIELD_FLOAT ),
 
@@ -6317,7 +6318,7 @@ bool C_BaseEntity::ValidateEntityAttachedToPlayer( bool &bShouldRetry )
 {
 
 	// Better Fortress - Honestly VALVe please add this, this PATCH is pointless and unecessary anymore, let people parent whatever they want, thanks...
-	if ( bf_player_parentables.GetBool() )
+	if ( cf_player_parentables.GetBool() )
 	{
 		bShouldRetry = false;
 		return true;

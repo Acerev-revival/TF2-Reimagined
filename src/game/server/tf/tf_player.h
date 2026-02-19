@@ -166,7 +166,7 @@ public:
 	virtual void		ResetPerRoundStats( void );
 
 	void				HandleCommand_JoinTeam( const char *pTeamName );
-	void				HandleCommand_JoinClass( const char *pClassName, bool bAllowSpawn = true );
+	virtual void				HandleCommand_JoinClass( const char *pClassName, bool bAllowSpawn = true );
 	void				HandleCommand_JoinTeam_NoMenus( const char *pTeamName );
 
 	void				CreateViewModel( int iViewModel = 0 );
@@ -248,7 +248,7 @@ public:
 	void				SetRememberLastWeapon( bool bRememberLastWeapon ) { m_bRememberLastWeapon = bRememberLastWeapon; }
 	void				SetRememberActiveWeapon( bool bRememberActiveWeapon ) { m_bRememberActiveWeapon = bRememberActiveWeapon; }
 
-	void				Regenerate( bool bRefillHealthAndAmmo = true );
+	virtual void				Regenerate( bool bRefillHealthAndAmmo = true );
 	float				GetNextRegenTime( void ){ return m_flNextRegenerateTime; }
 	void				SetNextRegenTime( float flTime ){ m_flNextRegenerateTime = flTime; }
 
@@ -628,7 +628,8 @@ public:
 	bool IsYetiHeavy(void) const;
 	bool IsFairyHeavy( void ) const;
 	bool IsZombieCostumeEquipped( void ) const;
-	bool IsMVMRobot ( void ) const;
+	bool IsMVMRobot ( void ) const; //Robot Costume
+	bool IsPVERobot ( void ) const; //Robot from Gamemode
 	bool HasWearablesEquipped( const CSchemaItemDefHandle *ppItemDefs, int nWearables ) const;
 
 	//BetaM - Fixes custom taunts/action items to be "valid" for loadouts
@@ -1008,6 +1009,8 @@ public:
 	CTFWeaponBase		*Weapon_OwnsThisID( int iWeaponID ) const;
 	CTFWeaponBase		*Weapon_GetWeaponByType( int iType );
 
+	virtual void		PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force );
+
 	medigun_charge_types	GetChargeEffectBeingProvided( void );
 
 	// Achievements
@@ -1037,7 +1040,7 @@ public:
 
 	int					m_iOldStunFlags;
 
-	bool				m_bFlipViewModels;
+	CNetworkVar( bool, m_bFlipViewModels );
 	int					m_iBlastJumpState;
 	float				m_flBlastJumpLandTime;
 	bool				m_bTakenBlastDamageSinceLastMovement;
@@ -1386,6 +1389,9 @@ private:
 	// Matchmaking
 	// is this player bound to the match on penalty of abandon. Sync'd via local-player-only DT
 	CNetworkVar( bool, m_bMatchSafeToLeave );
+
+	// Using the chat?
+	CNetworkVar( bool, m_bTyping );
 
 	CWaveSpawnPopulator *m_pWaveSpawnPopulator;
 	float				m_flLastReadySoundTime;

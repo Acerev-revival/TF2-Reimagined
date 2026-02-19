@@ -11,10 +11,12 @@
 #include "cbase.h"
 #include "clientmode_shared.h"
 #include "iinput.h"
+#include "input.h"
 #include "view_shared.h"
 #include "iviewrender.h"
 #include "hud_basechat.h"
 #include "weapon_selection.h"
+#include "in_buttons.h"
 #include <vgui/IVGui.h>
 #include <vgui/Cursor.h>
 #include <vgui/IPanel.h>
@@ -35,6 +37,8 @@
 #include "cam_thirdperson.h"
 #include <vgui/ILocalize.h>
 #include "hud_vote.h"
+
+extern ConVar cam_freelook;
 #include "ienginevgui.h"
 #include "sourcevr/isourcevirtualreality.h"
 #if defined( _X360 )
@@ -65,6 +69,7 @@ extern ConVar replay_rendersetting_renderglow;
 #include "c_tf_player.h"
 #include "econ_item_description.h"
 #include "c_tf_team.h"
+#include "tf_hud_mainmenuoverride.h"
 #endif
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -318,7 +323,22 @@ void ClientModeShared::ReloadScheme( bool flushLowLevel )
 
 	BuildGroup::ClearResFileCache();
 
+	// Reload scheme fonts to pick up any changes
+	vgui::scheme()->ReloadFonts();
+
 	m_pViewport->ReloadScheme( "resource/ClientScheme.res" );
+
+#if defined( TF_CLIENT_DLL )
+	// Reload the main menu by forcing it to re-apply its scheme settings
+	CHudMainMenuOverride *pMMOverride = (CHudMainMenuOverride*)( gViewPortInterface->FindPanelByName( PANEL_MAINMENUOVERRIDE ) );
+	if ( pMMOverride )
+	{
+		vgui::HScheme pScheme = vgui::scheme()->LoadSchemeFromFileEx( enginevgui->GetPanel( PANEL_CLIENTDLL ), "resource/ClientScheme.res", "ClientScheme" );
+		pMMOverride->SetScheme( pScheme );
+		pMMOverride->SetProportional( true );
+		pMMOverride->InvalidateLayout( false, true );
+	}
+#endif
 }
 
 
@@ -423,6 +443,9 @@ bool ClientModeShared::CreateMove( float flInputSampleTime, CUserCmd *cmd )
 	if(!pPlayer)
 		return true;
 
+	if ( m_pChatElement && m_pChatElement->GetMessageMode() != MM_NONE )
+		cmd->buttons |= IN_TYPING;
+
 	// Let the player at it
 	return pPlayer->CreateMove( flInputSampleTime, cmd );
 }
@@ -441,6 +464,15 @@ void ClientModeShared::OverrideView( CViewSetup *pSetup )
 		return;
 
 	pPlayer->OverrideView( pSetup );
+	
+	// Override camera position and angles if freelook (camera lock) is enabled
+	if ( cam_freelook.GetBool() && ::input->CAM_IsThirdPerson() )
+	{
+		CInput *pInput = static_cast<CInput*>( ::input );
+		pSetup->origin = pInput->m_vecFreeLookOrigin;
+		pSetup->angles = pInput->m_angFreeLookAngles;
+		return;
+	}
 
 	if( ::input->CAM_IsThirdPerson() )
 	{

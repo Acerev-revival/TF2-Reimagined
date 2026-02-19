@@ -1,11 +1,7 @@
 //Ty BetaM!
 //econ_item_schema.cpp - line 4421
-#base items_rebalance.txt
-//#base items_dev.txt
-
 "items_game"
 {
-
 	"prefabs"
 	{
 		"weapon_nailgun"
@@ -185,6 +181,16 @@ not sure if it should be used as a weapon"
 			"effect_type"	"neutral"
 			"stored_as_integer"	"1"
 		}
+		"4038"
+		{
+			"name"	"mod pda builds pads"
+			"attribute_class"	"pda_builds_pads"
+			"description_string"	"#Attrib_TeleporterPads"
+			"description_format"	"value_is_additive"
+			"hidden"	"0"
+			"effect_type"	"neutral"
+			"stored_as_integer"	"1"
+		}
 		// GRUB FORTRESS ATTRIBUTES
 		"5000"
 		{
@@ -290,7 +296,7 @@ not sure if it should be used as a weapon"
 			"attribute_class"	"mult_decloak_rate"
 			"description_string"	"#Attrib_DecloakRate"
 			"description_format"	"value_is_additive_percentage"
-			"hidden"	"0"
+			"hidden"	"1"
 			"effect_type"	"positive"
 		}
 		"5011"
@@ -304,6 +310,96 @@ not sure if it should be used as a weapon"
 			"armory_desc"	"cloak_type"
 			"stored_as_integer"	"0"
 		}
+		"5012"
+		{
+			"name"	"engineer dispenser build rate multiplier"
+			"attribute_class"	"dispenser_build_rate_multiplier"
+			"description_string"	"#Attrib_Dispenser_Build_Rate"
+			"description_format"	"value_is_percentage"
+			"hidden"	"0"
+			"effect_type"	"positive"
+			"stored_as_integer"	"0"
+		}
+		"5013"
+		{
+			"name"	"provide on active hidden"
+			"attribute_class"	"provide_on_active"
+			"description_string"	"#Attrib_ProvideOnActive"
+			"description_format"	"value_is_additive"
+			"hidden"	"1"
+			"effect_type"	"neutral"
+			"armory_desc"	"on_active"
+			"stored_as_integer"	"0"
+		}
+		"5014"
+		{
+			"name"	"dmg taken from blast reduced active"
+			"attribute_class"	"mult_dmgtaken_from_explosions"
+			"description_string"	"#Attrib_DmgTaken_From_Blast_Reduced_Active"
+			"description_format"	"value_is_inverted_percentage"
+			"hidden"	"0"
+			"effect_type"	"positive"
+			"armory_desc"	"on_wearer"
+			"stored_as_integer"	"0"
+		}
+		"5015"
+		{
+			"name"	"dmg taken from bullets reduced active"
+			"attribute_class"	"mult_dmgtaken_from_bullets"
+			"description_string"	"#Attrib_DmgTaken_From_Bullets_Reduced_Active"
+			"description_format"	"value_is_inverted_percentage"
+			"hidden"	"0"
+			"effect_type"	"positive"
+			"armory_desc"	"on_wearer"
+			"stored_as_integer"	"0"
+		}
+		"5016"
+		{
+			"name"	"mod pda builds speedpads"
+			"attribute_class"	"pda_builds_speedpads"
+			"description_string"	"#Attrib_TeleporterPads"
+			"description_format"	"value_is_additive"
+			"hidden"	"0"
+			"effect_type"	"neutral"
+			"stored_as_integer"	"1"
+		}
+		"5017"
+		{
+			"name"	"mod pda builds jumppads"
+			"attribute_class"	"pda_builds_jumppads"
+			"description_string"	"#Attrib_TeleporterPads"
+			"description_format"	"value_is_additive"
+			"hidden"	"0"
+			"effect_type"	"neutral"
+			"stored_as_integer"	"1"
+		}
+		"5018"
+		{
+			"name"	"mult decloak rate DISPLAY ONLY"
+			"attribute_class"	"mult_decloak_rate_DISPLAY_ONLY"
+			"description_string"	"#Attrib_DecloakRate"
+			"description_format"	"value_is_inverted_percentage"
+			"hidden"	"0"
+			"effect_type"	"positive"
+		}
+		"5019"
+		{
+			"name"	"is experimental item"
+			"attribute_class"	"is_experimental_item_DISPLAY"
+			"description_string"	"#TFGRUB_ExperimentalItem_Display"
+			"description_format"	"value_is_additive"
+			"hidden"	"0"
+			"effect_type"	"community"
+		}
+		"5020"
+		{
+			"name"	"is experimental rebalance display"
+			"attribute_class"	"is_experimental_rebalance_DISPLAY"
+			"description_string"	"#TFGRUB_ExperimentalRebalance_Display"
+			"description_format"	"value_is_additive"
+			"hidden"	"0"
+			"effect_type"	"community"
+		}
 	}
 	"items"
 	{
@@ -314,17 +410,19 @@ not sure if it should be used as a weapon"
 			"name"						"Nailgun"
 			"prefab"					"weapon_nailgun"
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 		}
 		// RPG 
 		"32002"
 		{
 			"name"						"RPG"
 			"item_quality"				"unique"
-			"item_name"					"RPG"
+			"item_name"					"#TFGRUB_Weapon_RPG"
 			"prefab"					"weapon_rocketlauncher"
 			"model_player"				"models/weapons/c_models/c_rpg/c_rpg.mdl"
 			"show_in_armory"			"1"
 			"moditem"					"1"
+			"usable_by_bots"			"0"
 			"attributes"
 			{
 				"projectile has gravity"
@@ -353,13 +451,12 @@ not sure if it should be used as a weapon"
 			"tags"
 			{
 				"can_deal_damage"			"1"
-				"can_deal_critical_damage"	"1"
-				"can_be_equipped_by_soldier_or_demo"	"1"
 			}
 			"item_logname"	"leadpipe"
 			"item_iconname"	"leadpipe"
 			"show_in_armory"	"1"
 			"moditem"			"1"
+			"usable_by_bots"			"1"
 			"item_type_name"	"#TFGRUB_Weapon_Leadpipe"
 			"item_name"	"#TFGRUB_Weapon_Leadpipe"
 			"item_slot"	"melee"
@@ -370,7 +467,6 @@ not sure if it should be used as a weapon"
 			"attach_to_hands"	"1"
 			"inspect_panel_dist" "40"
 			"item_quality"	"unique"
-			"propername"	"1"
 			"min_ilevel"	"5"
 			"max_ilevel"	"5"
 			"anim_slot" "MELEE_ALLCLASS"
@@ -420,6 +516,7 @@ not sure if it should be used as a weapon"
 			"model_player"				"models/weapons/c_models/c_construction_launcher/c_construction_launcher.mdl"
 			"show_in_armory"			"1"
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 			"attributes"
 			{
 				"grenade no stick"
@@ -511,8 +608,8 @@ not sure if it should be used as a weapon"
 			"item_description"			"(Credits : Haau, Dim)"				
 			"show_in_armory"			"1"	
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 			"item_slot"					"primary"
-			"propername"				"1"
 			"item_name"					"TFGRUB_Weapon_UnderPressure"	
 			"item_logname"				"under_pressure"
 			"item_iconname"				"under_pressure"
@@ -536,7 +633,7 @@ not sure if it should be used as a weapon"
 				"Reload time decreased"
 				{
 					"attribute_class"	"mult_reload_time"
-					"value"	"0.65"
+					"value"				"0.65"
 				}
 				"clip size penalty"
 				{
@@ -547,7 +644,12 @@ not sure if it should be used as a weapon"
 				{
 					"attribute_class"	"mult_dmg"
 					"value"				"0.85"			
-				}					
+				}
+				"single wep deploy time decreased"
+				{
+					"attribute_class"	"mult_single_wep_deploy_time"
+					"value"				"0.65"
+				}		
 			}
 			"visuals"
 			{
@@ -563,10 +665,10 @@ not sure if it should be used as a weapon"
 			"prefab"					"weapon_minigun"
 			"show_in_armory"			"1"	
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 			"item_description"			"Shoots nail projectiles
 			
 			(Credits : Haau, kibbleknight)"
-			"propername"				"0"
 			"item_name"					"TFGRUB_Weapon_Perforator"
 			"item_logname"				"perforator"
 			"item_iconname"				"perforator"
@@ -592,7 +694,7 @@ not sure if it should be used as a weapon"
 				"fire rate bonus"
 				{
 					"attribute_class"	"mult_postfiredelay"
-					"value"				"1.33"
+					"value"				"0.67"
 				}		
 				"maxammo primary increased" 
 				{
@@ -633,8 +735,8 @@ not sure if it should be used as a weapon"
 			"item_class"				"tf_weapon_minigun_singleshot"
 			"show_in_armory"			"1"	
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 			"item_description"			"(Credits : Haau, kibbleknight)"
-			"propername"				"0"
 			"anim_slot"					"primary"
 			"item_name"					"TFGRUB_Weapon_BigOwen"
 			"item_logname"				"big_owen"
@@ -702,6 +804,7 @@ not sure if it should be used as a weapon"
 			"item_class"				"tf_wearable"
 			"show_in_armory"			"1"
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 			"item_type_name"			"#TF_Wearable_Backpack"
 			"item_name"					"TFGRUB_Wearable_Metal_Backpack"
 			"item_description"			""
@@ -709,12 +812,11 @@ not sure if it should be used as a weapon"
 			"equip_region"				"back"
 			"anim_slot"					"FORCE_NOT_USED"
 			"item_quality"				"unique"
-			"propername"				"1"
-			"image_inventory"			"backpack/workshop/player/items/sniper/xms_sniper_commandobackpack/xms_sniper_commandobackpack"
+			"image_inventory"			"backpack/weapons/c_models/engineer_backpack/engineer_backpack"
 			"image_inventory_size_w"	"128"
 			"image_inventory_size_h"	"82"
-			"model_player"				"models/workshop/player/items/sniper/xms_sniper_commandobackpack/xms_sniper_commandobackpack.mdl"
-			"extra_wearable"			"models/workshop/player/items/sniper/xms_sniper_commandobackpack/xms_sniper_commandobackpack.mdl"
+			"model_player"				"models/player/items/engineer/engineer_metal_backpack.mdl"
+			"extra_wearable"			"models/player/items/engineer/engineer_metal_backpack.mdl"
 			"used_by_classes"
 			{
 				"engineer"				"1"
@@ -744,13 +846,14 @@ not sure if it should be used as a weapon"
 			"image_inventory_size_w"	"128"
 			"image_inventory_size_h"	"82"
 			"model_player"				"models/weapons/c_models/c_needlesaw/c_needlesaw.mdl"
-			"moditem" 					"1"
+			"moditem"					"1"
+			"usable_by_bots"			"0"
 			"attributes"
 			{
 				"heal teammate on hit"
 				{
 					"attribute_class"	"heal_teammate_on_hit"
-					"value"				"75"
+					"value"				"50"
 				}
 				"single wep deploy time decreased"
 				{
@@ -762,6 +865,11 @@ not sure if it should be used as a weapon"
 					"attribute_class"	"mult_dmg"
 					"value"				"0.25"
 				}
+				"mark for death"
+				{
+					"attribute_class"	"mark_for_death"
+					"value"				"1"
+				}
 			}
 		}
 		"32011" // The Quickplay
@@ -770,6 +878,7 @@ not sure if it should be used as a weapon"
 			"prefab"					"weapon_invis"
 			"show_in_armory"			"1"
 			"moditem"					"1"
+			"usable_by_bots"			"1"
 			"item_type_name"			"#TF_Weapon_Watch"
 			"item_name"					"#TFGRUB_Weapon_Quickplay"
 			"item_slot"					"pda2"
@@ -793,7 +902,12 @@ not sure if it should be used as a weapon"
 				"mult decloak rate percentage"
 				{
 					"attribute_class"	"mult_decloak_rate"
-					"value"				"0.5"
+					"value"				"0.75"
+				}
+				"mult decloak rate DISPLAY ONLY"
+				{
+					"attribute_class"	"mult_decloak_rate_DISPLAY_ONLY"
+					"value"				"0.75"
 				}
 				"mod_cloak_no_damage_reduction"
 				{
@@ -808,7 +922,7 @@ not sure if it should be used as a weapon"
 				"NoCloakWhenCloaked"
 				{
 					"attribute_class"	"NoCloakWhenCloaked"
-					"value"	"1"
+					"value"				"1"
 				}
 			}
 			"mouse_pressed_sound"	"ui/item_watch_pickup.wav"

@@ -23,15 +23,13 @@
 #include <tier0/memdbgon.h>
 
 ConVar tf_explanations_charinfo_armory_panel( "tf_explanations_charinfo_armory_panel", "0", FCVAR_ARCHIVE, "Whether the user has seen explanations for this panel." );
+ConVar tf_armory_page_skip( "tf_armory_page_skip", "10", FCVAR_ARCHIVE, "Number of pages to skip in the Mann Co. Catalog", true, 1, true, 100 );
 
 const char *g_szArmoryFilterStrings[ARMFILT_TOTAL] =
 {
-	"#ArmoryFilter_AllItems",		// ARMFILT_ALL_ITEMS.
+	"#ArmoryFilter_ModItems",		// ARMFILT_MODITEMS,
+	"#ArmoryFilter_AllItems",		// ARMFILT_ALL_ITEMS,
 	"#ArmoryFilter_Weapons",		// ARMFILT_WEAPONS,
-	"#ArmoryFilter_MiscItems",		// ARMFILT_MISCITEMS,
-	"#ArmoryFilter_ActionItems",	// ARMFILT_ACTIONITEMS,
-	"#ArmoryFilter_CraftItems",		// ARMFILT_CRAFTITEMS,
-	"#ArmoryFilter_Tools",			// ARMFILT_TOOLS,
 	"#ArmoryFilter_AllClass",		// ARMFILT_CLASS_ALL,
 	"#ArmoryFilter_Scout",			// ARMFILT_CLASS_SCOUT,
 	"#ArmoryFilter_Sniper",			// ARMFILT_CLASS_SNIPER,
@@ -42,8 +40,6 @@ const char *g_szArmoryFilterStrings[ARMFILT_TOTAL] =
 	"#ArmoryFilter_Pyro",			// ARMFILT_CLASS_PYRO,
 	"#ArmoryFilter_Spy",			// ARMFILT_CLASS_SPY,
 	"#ArmoryFilter_Engineer",		// ARMFILT_CLASS_ENGINEER,
-	"#ArmoryFilter_Donationitems",	// ARMFILT_DONATIONITEMS,
-	"#ArmoryFilter_ModItems",		// ARMFILT_MODITEMS,
 
 	"",								// ARMFILT_NUM_IN_DROPDOWN
 	"Not Used",						// ARMFILT_CUSTOM
@@ -58,11 +54,9 @@ CArmoryPanel::CArmoryPanel(Panel *parent, const char *panelName) : vgui::Editabl
 	m_pSelectedItemImageModelPanel = new CItemModelPanel( this, "SelectedItemImageModelPanel" );
 	m_pThumbnailModelPanelKVs = NULL;
 	m_bReapplyItemKVs = false;
-	m_CurrentFilter = ARMFILT_ALL_ITEMS;
-	m_OldFilter = ARMFILT_ALL_ITEMS;
+	m_CurrentFilter = ARMFILT_MODITEMS;
+	m_OldFilter = ARMFILT_MODITEMS;
 	m_iFilterPage = 0;
-	m_pNextPageButton = NULL;
-	m_pPrevPageButton = NULL;
 	m_pViewSetButton = NULL;
 	m_pStoreButton = NULL;
 	m_bAllowGotoStore = false;
@@ -110,8 +104,6 @@ void CArmoryPanel::ApplySchemeSettings( vgui::IScheme *pScheme )
 	m_pMouseOverItemPanel->SetBorder( pScheme->GetBorder("LoadoutItemPopupBorder") );
 
 	m_pDataTextRichText = dynamic_cast<CEconItemDetailsRichText*>( m_pDataPanel->FindChildByName( "Data_TextRichText" ) );
-	m_pNextPageButton = dynamic_cast<CExButton*>( FindChildByName("NextPageButton") );
-	m_pPrevPageButton = dynamic_cast<CExButton*>( FindChildByName("PrevPageButton") );
 	m_pViewSetButton = dynamic_cast<CExButton*>( FindChildByName("ViewSetButton") );
 	m_pStoreButton = dynamic_cast<CExButton*>( FindChildByName("StoreButton") );
 
@@ -312,26 +304,63 @@ void CArmoryPanel::OnClosing()
 //-----------------------------------------------------------------------------
 void CArmoryPanel::OnCommand( const char *command )
 {
-	if ( !Q_strnicmp( command, "prevpage", 8 ) )
+	if ( !Q_stricmp( command, "prevpage" ) )
 	{
 		if ( m_iFilterPage > 0 )
 		{
 			m_iFilterPage--;
-			UpdateItemList();
-			UpdateSelectedItem();
 		}
-		return;
-	}
-	else if ( !Q_strnicmp( command, "nextpage", 8 ) )
-	{
-		int nMaxPages = MAX( 1, ceil(m_FilteredItemList.Count() / (float)(m_iThumbnailRows * m_iThumbnailColumns)) );
-		if ( m_iFilterPage < (nMaxPages-1) )
+		else
 		{
-			m_iFilterPage++;
-			UpdateItemList();
-			UpdateSelectedItem();
+			m_iFilterPage = ceil( m_FilteredItemList.Count() / (float)( m_iThumbnailRows * m_iThumbnailColumns ) ) - 1;
 		}
-		return;
+		UpdateItemList();
+		UpdateSelectedItem();
+	}
+	else if ( !Q_stricmp( command, "prevpageskip" ) )
+	{
+		for ( int i = 0; i < tf_armory_page_skip.GetInt(); i++ )
+		{
+			if ( m_iFilterPage > 0 )
+			{
+				m_iFilterPage--;
+			}
+			else
+			{
+				m_iFilterPage = ceil( m_FilteredItemList.Count() / (float)( m_iThumbnailRows * m_iThumbnailColumns ) ) - 1;
+			}
+		}
+		UpdateItemList();
+		UpdateSelectedItem();
+	}
+	else if ( !Q_stricmp( command, "skiptostart" ) )
+	{
+		m_iFilterPage = 0;
+		UpdateItemList();
+		UpdateSelectedItem();
+	}
+	else if ( !Q_stricmp( command, "nextpage" ) )
+	{
+		m_iFilterPage++;
+		if ( m_iFilterPage > ceil( m_FilteredItemList.Count() / (float)( m_iThumbnailRows * m_iThumbnailColumns ) ) - 1 )
+		{
+			m_iFilterPage = 0;
+		}
+		UpdateItemList();
+		UpdateSelectedItem();
+	}
+	else if ( !Q_stricmp( command, "nextpageskip" ) )
+	{
+		uint32 unNumPages = ceil( m_FilteredItemList.Count() / (float)( m_iThumbnailRows * m_iThumbnailColumns ) );
+		m_iFilterPage = ( ( m_iFilterPage + tf_armory_page_skip.GetInt() ) % unNumPages );
+		UpdateItemList();
+		UpdateSelectedItem();
+	}
+	else if ( !Q_stricmp( command, "skiptoend" ) )
+	{
+		m_iFilterPage = ceil( m_FilteredItemList.Count() / (float)( m_iThumbnailRows * m_iThumbnailColumns ) ) - 1;
+		UpdateItemList();
+		UpdateSelectedItem();
 	}
 	else if ( !Q_strnicmp( command, "back", 4 ) )
 	{
@@ -367,7 +396,7 @@ void CArmoryPanel::OnCommand( const char *command )
 				ELanguage iLang = PchLanguageToELanguage( uilanguage );
 
 				char szURL[512];
-				Q_snprintf( szURL, sizeof(szURL), "http://wiki.teamfortress.com/scripts/itemredirect.php?id=%d&lang=%s", m_SelectedItem.GetItemDefIndex(), GetLanguageICUName( iLang ) );
+				Q_snprintf( szURL, sizeof( szURL ), "https://wiki.teamfortress.com/scripts/itemredirect.php?id=%d&lang=%s", m_SelectedItem.GetItemDefIndex(), GetLanguageICUName( iLang ) );
 				steamapicontext->SteamFriends()->ActivateGameOverlayToWebPage( szURL );
 
 				C_CTF_GameStats.Event_Catalog( IE_ARMORY_BROWSE_WIKI, NULL, &m_SelectedItem );
@@ -550,10 +579,32 @@ void CArmoryPanel::SetFilterTo( int iItemDef, armory_filters_t nFilter )
 //-----------------------------------------------------------------------------
 bool CArmoryPanel::DefPassesFilter( const CTFItemDefinition *pDef, armory_filters_t iFilter )
 {
+	int iSlot = pDef->GetDefaultLoadoutSlot();
 	bool bInList = false;
+
+	if ( iSlot == LOADOUT_POSITION_HEAD ||
+		iSlot == LOADOUT_POSITION_MISC ||
+		iSlot == LOADOUT_POSITION_MISC2 ||
+		iSlot == LOADOUT_POSITION_ACTION ||
+		iSlot == LOADOUT_POSITION_TAUNT ||
+		iSlot == LOADOUT_POSITION_TAUNT2 ||
+		iSlot == LOADOUT_POSITION_TAUNT3 ||
+		iSlot == LOADOUT_POSITION_TAUNT4 ||
+		iSlot == LOADOUT_POSITION_TAUNT5 ||
+		iSlot == LOADOUT_POSITION_TAUNT6 ||
+		iSlot == LOADOUT_POSITION_TAUNT7 ||
+		iSlot == LOADOUT_POSITION_TAUNT8 )
+		return false;
 
 	switch (iFilter)
 	{
+
+	case ARMFILT_MODITEMS:
+		{
+			bInList = pDef->IsModItem();
+			break;
+		}
+
 	case ARMFILT_ALL_ITEMS:
 		{
 			bInList = true;
@@ -561,42 +612,11 @@ bool CArmoryPanel::DefPassesFilter( const CTFItemDefinition *pDef, armory_filter
 		}
 
 	case ARMFILT_WEAPONS:
-		{
-			int iSlot = pDef->GetDefaultLoadoutSlot();
-			bInList = ( iSlot == LOADOUT_POSITION_PRIMARY || iSlot == LOADOUT_POSITION_SECONDARY || iSlot == LOADOUT_POSITION_MELEE );
-			break;
-		}
-
-	case ARMFILT_MISCITEMS:
-		{
-			bInList = (pDef->GetDefaultLoadoutSlot() == LOADOUT_POSITION_MISC);
-			break;
-		}
-
-	case ARMFILT_ACTIONITEMS:
-		{
-			bInList = (pDef->GetDefaultLoadoutSlot() == LOADOUT_POSITION_ACTION);
-			break;
-		}
-
-	case ARMFILT_CRAFTITEMS:
-		{
-			bInList = pDef->GetItemClass() && ( !V_strcmp( pDef->GetItemClass(), "craft_item" ) || !V_strcmp( pDef->GetItemClass(), "class_token" ) || !V_strcmp( pDef->GetItemClass(), "slot_token" ) );
-			break;
-		}
-
-	case ARMFILT_TOOLS:
-		{
-			// For now, put the supply crates into the tool list, since it's the only item that shows up in no other lists
-			bInList = pDef->GetItemClass() && ( !V_strcmp( pDef->GetItemClass(), "tool" ) || !V_strcmp( pDef->GetItemClass(), "supply_crate" ) );
-			break;
-		}
-
-	case ARMFILT_CLASS_ALL:
-		{
-			bInList = pDef->CanBeUsedByAllClasses();
-			break;
-		}
+	{
+		int iSlot = pDef->GetDefaultLoadoutSlot();
+		bInList = ( iSlot == LOADOUT_POSITION_PRIMARY || iSlot == LOADOUT_POSITION_SECONDARY || iSlot == LOADOUT_POSITION_MELEE || iSlot == LOADOUT_POSITION_BUILDING || iSlot == LOADOUT_POSITION_PDA || iSlot == LOADOUT_POSITION_PDA2 );
+		break;
+	}
 
 	case ARMFILT_CLASS_SCOUT:
 	case ARMFILT_CLASS_SNIPER:
@@ -616,16 +636,9 @@ bool CArmoryPanel::DefPassesFilter( const CTFItemDefinition *pDef, armory_filter
 			break;
 		}
 
-	case ARMFILT_DONATIONITEMS:
+	case ARMFILT_CLASS_ALL:
 		{
-			// Don't show class/slot usage for class/slot tokens
-			bInList = pDef->GetItemClass() && !V_strcmp( pDef->GetItemClass(), "map_token" );
-			break;
-		}
-
-	case ARMFILT_MODITEMS:
-		{
-			bInList = pDef->IsModItem();
+			bInList = pDef->CanBeUsedByAllClasses();
 			break;
 		}
 	}
@@ -689,10 +702,6 @@ void CArmoryPanel::UpdateItemList( void )
 	int nMaxPages = MAX( 1, ceil(m_FilteredItemList.Count() / (float)(m_iThumbnailRows * m_iThumbnailColumns)) );
 	Q_snprintf(szTmp, 16, "%d/%d", m_iFilterPage+1, nMaxPages );
 	SetDialogVariable( "thumbnailpage", szTmp );
-
-	bool bNextEnabled = m_iFilterPage < (nMaxPages-1);
-	m_pNextPageButton->SetEnabled( bNextEnabled );
-	m_pPrevPageButton->SetEnabled( m_iFilterPage > 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -939,7 +948,7 @@ void CArmoryPanel::OnItemLinkClicked( KeyValues *pParams )
 {
 	const char *pURL = pParams->GetString( "url" );
 	int iItemDef = atoi( pURL + 7 );
-	JumpToItem( iItemDef, ARMFILT_ALL_ITEMS );
+	JumpToItem( iItemDef, ARMFILT_MODITEMS );
 	m_pFilterComboBox->ActivateItemByRow( 0 );
 }
 

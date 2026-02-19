@@ -23,6 +23,10 @@
 #include "vscript/ivscript.h"
 #include "vscript_server.h"
 
+class IPhysicsObject;
+void PhysDisableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObject1 );
+void PhysEnableEntityCollisions( IPhysicsObject *pObject0, IPhysicsObject *pObject1 );
+
 class CDamageModifier;
 class CDmgAccumulator;
 
@@ -1368,6 +1372,30 @@ public:
 		VPhysicsDestroyObject(); 
 	}
 
+	void ScriptToggleCollisionsOn( HSCRIPT pEntity, bool bEnable )
+	{
+		IPhysicsObject * vPhysObj1 = VPhysicsGetObject();
+		// need two different objects to do anything
+
+		CBaseEntity *hTarget = ToEnt( pEntity );
+		IPhysicsObject* vPhysObj2 = hTarget->VPhysicsGetObject();
+		//Invalid Target
+		if ( !vPhysObj2 && !vPhysObj1 )
+			return;
+
+		if ( vPhysObj1 && vPhysObj2 && vPhysObj1 != vPhysObj2 )
+		{
+			if ( bEnable )
+			{
+				PhysEnableEntityCollisions( vPhysObj1, vPhysObj2 );
+			}
+			else
+			{
+				PhysDisableEntityCollisions( vPhysObj1, vPhysObj2 );
+			}
+		}
+	}
+
 	void ScriptSetMass( float flMass ) 
 	{ 
 		IPhysicsObject * vPhys = VPhysicsGetObject();
@@ -1966,7 +1994,7 @@ private:
 	EHANDLE			m_pBlocker;
 
 	// was pev->gravity;
-	float			m_flGravity;  // rename to m_flGravityScale;
+	CNetworkVar( float, m_flGravity );  // rename to m_flGravityScale;
 	// was pev->friction
 	CNetworkVarForDerived( float, m_flFriction );
 	CNetworkVar( float, m_flElasticity );

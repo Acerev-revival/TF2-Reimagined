@@ -34,43 +34,6 @@ VERSION 1.0
 
 DESCRIPTION INFO_OPTIONS
 {
-	"category1"
-	{
-		"#TF_OptionCategory_Communication"
-		{ CATEGORY }
-	}
-	
-	"voice_modenable"
-	{
-		"#TF_EnableVoiceChat"
-		"#Tooltip_EnableVoiceChat"
-		{ BOOL }
-		{ "0" }
-	}
-	
-	"cl_enable_text_chat"
-	{
-		"#TF_EnableTextChat"
-		"#Tooltip_EnableTextChat"
-		{ BOOL }
-		{ "0" }
-	}
-	
-	"cl_clear_chat_on_disconnect"
-	{
-		"#TF_ClearTextChatOnDisconnect"
-		"#Tooltip_ClearTextChatOnDisconnect"
-		{ BOOL }
-		{ "0" }
-	}
-	
-	"chat_filter_settings"
-	{
-		"#TF_ChatFilterSettings"
-		"#Tooltip_ChatFilterSettings"
-		{ BUTTON }
-		{ "open_chat_filter_settings" }
-	}
 
 	"category2"
 	{
@@ -86,10 +49,10 @@ DESCRIPTION INFO_OPTIONS
 		{ "0" }
 	}
 	
-	"tfgrub_ammobucket"
+	"cf_use_radial_voice_menu"
 	{
-		"#TFGrub_Ammobucket"
-		"#Tooltip_TFGrub_Ammobucket"
+		"#TF_UseRadialVoiceMenu"
+		"#Tooltip_UseRadialVoiceMenu"
 		{ BOOL }
 		{ "0" }
 	}
@@ -336,14 +299,14 @@ DESCRIPTION INFO_OPTIONS
 		{ "75" }
 	}
 	
-	"bf_medic_show_crit_heal_indicator"
+	"cf_medic_show_crit_heal_indicator"
 	{
 		"#TF_MedicShowCritHealIndicator"
 		"#Tooltip_MedicShowCritHealIndicator"
 		{ BOOL }
 		{ "1" }
 	}
-		
+	
 	"category4"
 	{
 		"#TF_OptionCategory_HUD"
@@ -354,6 +317,14 @@ DESCRIPTION INFO_OPTIONS
 	{
 		"#GameUI_EnableHUDMinMode"
 		"#Tooltip_EnableHUDMinMode"
+		{ BOOL }
+		{ "0" }
+	}
+	
+	"tfgrub_ammobucket"
+	{
+		"#TFGrub_Ammobucket"
+		"#Tooltip_TFGrub_Ammobucket"
 		{ BOOL }
 		{ "0" }
 	}
@@ -488,31 +459,7 @@ DESCRIPTION INFO_OPTIONS
 		{ SLIDER 0 255 }
 		{ "100" }
 	}
-
-	"tf_contract_progress_show"
-	{
-		"#TF_Contract_Progress"
-		"#ToolTip_TF_Contract_Progress"
-		{ LIST
-			"#TF_Contract_Progress_None"	"0"
-			"#TF_Contract_Progress_All"		"1"
-			"#TF_Contract_Progress_Active"	"2"
-		}
-		{ "1" }
-	}
-
-	"tf_contract_competitive_show"
-	{
-		"#TF_Contract_Progress_Competitive"
-		"#ToolTip_TF_Contract_Progress"
-		{ LIST
-			"#TF_Contract_Progress_None"	"0"
-			"#TF_Contract_Progress_All"		"1"
-			"#TF_Contract_Progress_Active"	"2"
-		}
-		{ "1" }
-	}
-
+	
 	"tf_scoreboard_mouse_mode"
 	{
 		"#TF_ScoreBoard_MouseMode"
@@ -526,80 +473,11 @@ DESCRIPTION INFO_OPTIONS
 		{ BOOL }
 		{ "1" }
 	}
-
-	"tf_scoreboard_alt_class_icons"
-	{
-		"#TF_ScoreBoard_AltClassIcons"
-		{ BOOL }
-		{ "0" }
-	}
 	
-	"bf_clean_spectator_hud"
+	"cf_clean_spectator_hud"
 	{
 		"#BF_CleanSpectatorHUD"
 		"#Tooltip_CleanSpectatorHUD"
-		{ BOOL }
-		{ "0" }
-	}
-
-	"category5"
-	{
-		"#TF_OptionCategory_Replay"
-		{ CATEGORY }
-	}
-	
-	"youtube_http_proxy"
-	{
-		"#TFOption_httpproxy"
-		"#Tooltip_httpproxy"
-		{ STRING }
-		{ "" }
-	}
-	
-	"replay_postdeathrecordtime"
-	{
-		"#TFOption_postdeathrecordtime"
-		"#Tooltip_postdeathrecordtime"
-		{ SLIDER 0 10 }
-		{ "5" }
-	}
-	
-	"replay_enableeventbasedscreenshots"
-	{
-		"#TFOption_replay_enableeventbasedscreenshots"
-		"#Tooltip_replay_enableeventbasedscreenshots"
-		{ BOOL }
-		{ "1" }
-	}
-
-	"replay_screenshotresolution"
-	{
-		"#TFOption_replay_screenshotresolution"
-		"#Tooltip_replay_screenshotresolution"
-		{ BOOL }
-		{ "1" }
-	}
-	
-	"replay_maxscreenshotsperreplay"
-	{
-		"#TFOption_replay_maxscreenshots"
-		"#Tooltip_replay_maxscreenshots"
-		{ NUMBER 1 1000 }
-		{ "200" }
-	}
-	
-	"replay_mintimebetweenscreenshots"
-	{
-		"#TFOption_mintimebetweenscreenshots"
-		"#Tooltip_mintimebetweenscreenshots"
-		{ NUMBER 1 1000 }
-		{ "5" }
-	}
-
-	"tf_replay_pyrovision"
-	{
-		"#TF_ReplayPyroVision"
-		"#Tooltip_ReplayPyroVision"
 		{ BOOL }
 		{ "0" }
 	}
@@ -695,6 +573,14 @@ DESCRIPTION INFO_OPTIONS
 		{ BOOL }
 		{ "0" }
 	}
+	
+	"lux_phong_defaulthalflambert"
+	{
+		"#TFGrub_HalfLambertToggle"
+		"#TFGrub_Tooltip_HalfLambertToggle"
+		{ BOOL }
+		{ "1" }
+	}
 
 	"tf_hide_custom_decals"
 	{
@@ -742,30 +628,6 @@ DESCRIPTION INFO_OPTIONS
 		{ BOOL }
 		{ "1" }
 	}
-	
-	"cl_trading_show_requests_from"
-	{
-		"#TF_ShowTradeRequestsFrom"
-		{ LIST
-			"#TF_ShowTradeRequestsFrom_FriendsOnly" "1"
-			"#TF_ShowTradeRequestsFrom_FriendsAndServer" "2"
-			"#TF_ShowTradeRequestsFrom_Anyone" "3"
-			"#TF_ShowTradeRequestsFrom_NoOne" "4"
-		}
-		{ "3" }
-	}
-
-	"cl_show_market_data_on_items"
-	{
-		"#TF_ShowMarketDataOnItems"
-		"#Tooltip_ShowMarketDataOnItems"
-		{ LIST
-			"#TF_ShowMarketDataOnItems_Never" "0"
-			"#TF_ShowMarketDataOnItems_WhenBordersOnly" "1"
-			"#TF_ShowMarketDataOnItems_Always" "2"
-		}
-		{ "1" }
-	}
 
 	"tf_discord_rpc"
 	{
@@ -782,6 +644,107 @@ DESCRIPTION INFO_OPTIONS
 		{ NUMBER 5 15}
 		{ "5" }
 	}
+
+	"cf_disable_weapon_skins"
+	{
+		"#CF_DisableWeaponSkins"
+		"#Tooltip_DisableWeaponSkins"
+		{ BOOL }
+		{ "0" }
+	}
+	
+	"category1"
+	{
+		"#TF_OptionCategory_Communication"
+		{ CATEGORY }
+	}
+		
+	"cl_enable_text_chat"
+	{
+		"#TF_EnableTextChat"
+		"#Tooltip_EnableTextChat"
+		{ BOOL }
+		{ "0" }
+	}
+	
+	"voice_modenable"
+	{
+		"#TF_EnableVoiceChat"
+		"#Tooltip_EnableVoiceChat"
+		{ BOOL }
+		{ "0" }
+	}
+	
+	"chat_filter_settings"
+	{
+		"#TF_ChatFilterSettings"
+		"#Tooltip_ChatFilterSettings"
+		{ BUTTON }
+		{ "open_chat_filter_settings" }
+	}
+	
+	"cl_clear_chat_on_disconnect"
+	{
+		"#TF_ClearTextChatOnDisconnect"
+		"#Tooltip_ClearTextChatOnDisconnect"
+		{ BOOL }
+		{ "0" }
+	}
+
+	"category5"
+	{
+		"#TF_OptionCategory_Replay"
+		{ CATEGORY }
+	}
+	
+	"replay_postdeathrecordtime"
+	{
+		"#TFOption_postdeathrecordtime"
+		"#Tooltip_postdeathrecordtime"
+		{ SLIDER 0 10 }
+		{ "5" }
+	}
+	
+	"replay_enableeventbasedscreenshots"
+	{
+		"#TFOption_replay_enableeventbasedscreenshots"
+		"#Tooltip_replay_enableeventbasedscreenshots"
+		{ BOOL }
+		{ "1" }
+	}
+
+	"replay_screenshotresolution"
+	{
+		"#TFOption_replay_screenshotresolution"
+		"#Tooltip_replay_screenshotresolution"
+		{ BOOL }
+		{ "1" }
+	}
+	
+	"replay_maxscreenshotsperreplay"
+	{
+		"#TFOption_replay_maxscreenshots"
+		"#Tooltip_replay_maxscreenshots"
+		{ NUMBER 1 1000 }
+		{ "200" }
+	}
+	
+	"replay_mintimebetweenscreenshots"
+	{
+		"#TFOption_mintimebetweenscreenshots"
+		"#Tooltip_mintimebetweenscreenshots"
+		{ NUMBER 1 1000 }
+		{ "5" }
+	}
+
+	"tf_replay_pyrovision"
+	{
+		"#TF_ReplayPyroVision"
+		"#Tooltip_ReplayPyroVision"
+		{ BOOL }
+		{ "0" }
+	}
+	
 
 	"category8"
 	{

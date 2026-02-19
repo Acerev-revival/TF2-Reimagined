@@ -97,13 +97,13 @@ class CMannVsMachineUpgrades;
 //extern ConVar tf_populator_damage_multiplier;
 
 extern ConVar tf_mvm_defenders_team_size;
-extern ConVar bf_gamemode_mvmvs;
-extern ConVar bf_mvmvs_use_loadout;
-extern ConVar bf_mvmvs_playstyle;
-extern ConVar bf_mvmvs_max_bosses;
-extern ConVar bf_mvmvs_max_giants;
-extern ConVar bf_mvmvs_restrict_slots;
-extern ConVar bf_mvmvs_enable_human_busters;
+extern ConVar cf_gamemode_mvmvs;
+extern ConVar cf_mvmvs_use_loadout;
+extern ConVar cf_mvmvs_playstyle;
+extern ConVar cf_mvmvs_max_bosses;
+extern ConVar cf_mvmvs_max_giants;
+extern ConVar cf_mvmvs_restrict_slots;
+extern ConVar cf_mvmvs_enable_human_busters;
 extern ConVar tf_mvm_max_invaders;
 
 const int kLadder_TeamSize_6v6 = 6;
@@ -464,7 +464,14 @@ public:
 			flRetVal = m_flCTFCaptureBonusTime;
 		}
 
-		return flRetVal; 
+		if ( IsInBdMode() ) // prevent bonus crits in bomb delivery
+		{
+			return 0.0f;
+		}
+		else
+		{
+			return flRetVal; 
+		}
 	}
 
 	// populate vector with set of control points the player needs to capture
@@ -599,6 +606,7 @@ public:
 	// Game Modes
 	virtual bool IsInArenaMode( void ) const OVERRIDE;
 	virtual bool IsInKothMode( void ) const OVERRIDE { return m_bPlayingKoth; }
+	virtual bool IsInBdMode( void ) const { return m_bPlayingBd; }
 	bool IsInMedievalMode( void ) const { return m_bPlayingMedieval; }
 	bool IsHolidayMap( int nHoliday ) const { return m_nMapHolidayType == nHoliday; }
 	
@@ -884,7 +892,7 @@ bool IsCreepWaveMode( void ) const;
 
 	bool CanHaveAmmo( CBaseCombatCharacter *pPlayer, int iAmmoIndex );
 
-	virtual const char *GetGameDescription( void ){ return "Team Fortress"; }
+	virtual const char *GetGameDescription( void ){ return "Grub Fortress"; }
 
 	virtual void Status( void (*print) (PRINTF_FORMAT_STRING const char *fmt, ...) );
 
@@ -1186,6 +1194,7 @@ private:
 	CNetworkHandle( CBonusRoundLogic, m_hBonusLogic );
 
 	CNetworkVar( bool, m_bPlayingKoth );
+	CNetworkVar( bool, m_bPlayingBd );
 	CNetworkVar( bool, m_bPowerupMode );
 	CNetworkVar( bool, m_bPlayingRobotDestructionMode );
 	CNetworkVar( bool, m_bPlayingMedieval );
@@ -1804,6 +1813,13 @@ private:
 
 	CHandle< CTeamRoundTimer > m_hRedTimer;
 	CHandle< CTeamRoundTimer > m_hBlueTimer;
+};
+
+class CBdLogic : public CPointEntity
+{
+	DECLARE_CLASS(CBdLogic, CPointEntity);
+public:
+	DECLARE_DATADESC();
 };
 
 #define CP_TIMER_THINK "CCPTimerLogicThink"

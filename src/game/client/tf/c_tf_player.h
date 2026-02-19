@@ -124,6 +124,7 @@ public:
 	virtual void Simulate( void );
 	virtual void FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options ) OVERRIDE;
 	virtual void UpdateStepSound( surfacedata_t *psurface, const Vector &vecOrigin, const Vector &vecVelocity ) OVERRIDE;
+	virtual void PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, float fvol, bool force );
 
 	CNewParticleEffect *SpawnHalloweenSpellFootsteps( ParticleAttachment_t eParticleAttachment, int iHalloweenFootstepType );
 
@@ -229,6 +230,9 @@ public:
 
 	void CreateSaveMeEffect( MedicCallerType nType = CALLER_TYPE_NORMAL );
 	void StopSaveMeEffect( bool bForceRemoveInstantly = false );
+
+	void UpdateTypingEffect();
+	void ToggleTypingEffect( bool bToggle );
 
 	void CreateCritHealIndicator();
 	void StopCritHealIndicator();
@@ -601,6 +605,7 @@ private:
 
 	// Medic callout particle effect
 	CNewParticleEffect	*m_pSaveMeEffect;
+	CNewParticleEffect	*m_pTypingEffect;
 	CNewParticleEffect	*m_pCritHealIndicator;
 	CNewParticleEffect	*m_pTauntWithMeEffect;
 
@@ -674,6 +679,10 @@ public:
 	int				m_iSpawnCounter;
 	bool			m_bArenaSpectator;
 
+	int				m_iTracerCount;			// Per-player tracer count for consistent tracer frequency
+
+	bool			m_bFlipViewModels;
+
 	bool			m_bIsMiniBoss;
 	bool			m_bIsABot;
 	int				m_nBotSkill;
@@ -682,9 +691,10 @@ public:
 	bool			m_bOldSaveMeParity;
 	bool			m_bIsCoaching;
 
-private:
 	void			UpdateTauntItem();
 	void			ParseSharedTauntDataFromEconItemView( const CEconItemView *pEconItemView );
+
+private:
 
 	QAngle			m_angEyeAngles;
 
@@ -967,6 +977,7 @@ private:
 	CNetworkVar( float, m_flHelpmeButtonPressTime );
 	CNetworkVar( bool, m_bViewingCYOAPDA );
 	CNetworkVar( bool, m_bRegenerating );
+	CNetworkVar( bool, m_bTyping );
 
 	bool m_bNotifiedWeaponInspectThisLife;
 

@@ -686,6 +686,7 @@ enum
 	ATTDESCFORM_VALUE_IS_OR,					// Printed as:  m_flValue, but results are ORd together instead of added
 	ATTDESCFORM_VALUE_IS_DATE,					// Printed as a date
 	ATTDESCFORM_VALUE_IS_ACCOUNT_ID,			// Printed as steam user name
+	ATTDESCFORM_VALUE_IS_STEAMID3,				// Printed as steam user name from SteamID3 format
 	ATTDESCFORM_VALUE_IS_PARTICLE_INDEX,		// Printed as a particle description
 	ATTDESCFORM_VALUE_IS_KILLSTREAKEFFECT_INDEX,// Printed as killstreak effect description
 	ATTDESCFORM_VALUE_IS_KILLSTREAK_IDLEEFFECT_INDEX,  // Printed as idle effect description
@@ -1286,6 +1287,7 @@ public:
 	bool		IsAllowedInMatch( void ) const		{ return m_bAllowedInThisMatch; }
 	bool		IsBaseItem( void ) const			{ return m_bBaseItem; }
 	bool		IsModItem(void) const				{ return m_bModItem; }
+	bool		CanBeUsedByBots(void) const			{ return m_bUsableByBots; }
 	bool		IsBundle( void ) const				{ return m_BundleInfo != NULL; }
 	bool		HasProperName( void ) const			{ return m_bProperName; }
 	const char	*GetClassToken( void ) const		{ return m_pszClassToken; }
@@ -1296,7 +1298,7 @@ public:
 	int			GetInventoryImagePosition( int iIndex ) const	{ Assert( iIndex >= 0 && iIndex < 2); return m_iInventoryImagePosition[iIndex]; }
 	int			GetInventoryImageSize( int iIndex ) const	{ Assert( iIndex >= 0 && iIndex < 2); return m_iInventoryImageSize[iIndex]; }
 	int			GetDropType( void ) const			{ return m_iDropType; }
-	const char	*GetHolidayRestriction( void ) const	{ return m_pszHolidayRestriction; }
+	const char	*GetHolidayRestriction( void ) const	{ ConVarRef cf_cosmetic_restrictions("cf_cosmetic_restrictions"); if ( cf_cosmetic_restrictions.GetBool() ) { return m_pszHolidayRestriction; } else { return NULL; } }
 	int			GetVisionFilterFlags( void ) const	{ return m_nVisionFilterFlags; }
 	int			GetSubType( void ) const	{ return m_iSubType; }
 	item_capabilities_t GetCapabilities( void ) const { return m_iCapabilities; }
@@ -1607,6 +1609,9 @@ private:
 	bool			m_bShouldShowInArmory;
 	bool			m_bBaseItem;
 	bool			m_bModItem;
+
+	bool			m_bUsableByBots;
+
 	bool			m_bImported;
 
 	// A pack bundle is a bundle that contains items that are not for sale individually
@@ -2920,6 +2925,9 @@ private:
 
 	// Contains the list of item definitions read in from all data files.
 	ItemDefinitionMap_t									m_mapItems;
+
+	// Contains a mapping from definition name to item definition
+	CUtlDict<CEconItemDefinition*>						m_mapItemsName;
 
 	CUtlMap<int, CQuestObjectiveDefinition*, int >		m_mapQuestObjectives;
 

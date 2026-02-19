@@ -48,7 +48,9 @@
 
 using namespace GCSDK;
 
-#define LOCAL_LOADOUT_FILE		"cfg/local_loadout.txt"
+#define LOCAL_LOADOUT_FILE		"cfg/tfgrub_loadout.txt"
+
+ConVar cf_cosmetic_restrictions("cf_cosmetic_restrictions", "1", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "Disable holiday restrictions on items.");
 
 #ifdef CLIENT_DLL
 //-----------------------------------------------------------------------------
@@ -959,7 +961,6 @@ void CTFPlayerInventory::UpdateCachedServerLoadoutItems()
 //-----------------------------------------------------------------------------
 void CTFPlayerInventory::UpdateRealTFLoadoutItems()
 {
-	V_memcpy( m_RealTFLoadoutItems, m_LoadoutItems, sizeof( itemid_t ) * ARRAYSIZE( m_RealTFLoadoutItems ) * ARRAYSIZE( m_RealTFLoadoutItems[0] ) );
 }
 
 void CTFPlayerInventory::LoadLocalLoadout()
@@ -971,14 +972,14 @@ void CTFPlayerInventory::LoadLocalLoadout()
 		return;
 	}
 
-	KeyValues *pLoadoutKV = new KeyValues("local_loadout");
+	KeyValues *pLoadoutKV = new KeyValues("tfgrub_loadout");
 	if (!pLoadoutKV->LoadFromFile(g_pFullFileSystem, LOCAL_LOADOUT_FILE, "MOD"))
 	{
 		SaveLocalLoadout( true, true );
 
 		if ( !pLoadoutKV->LoadFromFile( g_pFullFileSystem, LOCAL_LOADOUT_FILE, "MOD" ) )
 		{
-			Warning( "Unable to parse local_loadout.txt into keyvalues.\n" );
+			Warning( "Unable to parse tfgrub_loadout.txt into keyvalues.\n" );
 			return;
 		}
 	}
@@ -1065,7 +1066,7 @@ void CTFPlayerInventory::SaveLocalLoadout( bool bReset, bool bDefaultToGC )
 		return;
 	}
 
-	KeyValues *pLoadoutKV = new KeyValues("local_loadout");
+	KeyValues *pLoadoutKV = new KeyValues("tfgrub_loadout");
 
 	KeyValues *pActivePresetKV = new KeyValues("active_preset");
 	for (int iClass = 1; iClass < TF_CLASS_COUNT_ALL; ++iClass)
@@ -1191,9 +1192,9 @@ void CTFPlayerInventory::UnequipLocal(uint64 ulItemID)
 	{
 		for (int iSlot = 0; iSlot < CLASS_LOADOUT_POSITION_COUNT; ++iSlot)
 		{
-			if (m_LoadoutItems[iClass][iSlot] == ulItemID) {
+//			if (m_LoadoutItems[iClass][iSlot] == ulItemID) {
 				m_LoadoutItems[iClass][iSlot] = 0;
-			}
+//			}
 		}
 	}
 }
@@ -2216,8 +2217,9 @@ CON_COMMAND(clear_loadout_ui, "Clear local loadout back to stock defaults (show 
 }
 #endif	// TF_CLIENT_DLL
 
-#if defined( CLIENT_DLL )
-CON_COMMAND_F( cl_reload_item_schema, "Reload the item schema from items_game.txt and items_custom.txt on the client", FCVAR_CHEAT )
+#ifdef CLIENT_DLL
+// Helper function to reload item schema (can be called directly)
+void ReloadClientItemSchema()
 {
 	DevMsg("Reloading item schema on client...\n");
 	
@@ -2250,9 +2252,6 @@ CON_COMMAND_F( cl_reload_item_schema, "Reload the item schema from items_game.tx
 			if ( pKVItems )
 			{
 				DevMsg("Found custom items section, attempting to merge...\n");
-				// Note: This is a simplified approach - ideally we'd need to merge properly
-				// but for now this will reload the base schema and the custom file will 
-				// be handled by the existing BInitTextBuffer override
 			}
 		}
 		pKVCustom->deleteThis();
@@ -2292,6 +2291,11 @@ CON_COMMAND_F( cl_reload_item_schema, "Reload the item schema from items_game.tx
 	}
 	
 	DevMsg("Item schema reloaded successfully and attributes refreshed.\n");
+}
+
+CON_COMMAND_F( cl_reload_item_schema, "Reload the item schema from items_game.txt and items_custom.txt on the client", FCVAR_CHEAT )
+{
+	ReloadClientItemSchema();
 }
 #else
 CON_COMMAND_F( sv_reload_item_schema, "Reload the item schema from items_game.txt on the server", FCVAR_CHEAT )

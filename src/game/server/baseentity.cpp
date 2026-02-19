@@ -280,6 +280,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_clrRender),	32, SPROP_UNSIGNED),
 	SendPropInt		(SENDINFO(m_iTeamNum),		TEAMNUM_NUM_BITS, 0),
 	SendPropInt		(SENDINFO(m_CollisionGroup), 5, SPROP_UNSIGNED),
+	SendPropFloat	(SENDINFO(m_flGravity)),
 	SendPropFloat	(SENDINFO(m_flElasticity), 0, SPROP_COORD),
 	SendPropFloat	(SENDINFO(m_flShadowCastDistance), 12, SPROP_UNSIGNED ),
 	SendPropEHandle (SENDINFO(m_hOwnerEntity)),
@@ -2460,12 +2461,13 @@ BEGIN_ENT_SCRIPTDESC_ROOT( CBaseEntity, "Root class of all server-side entities"
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSetBuoyancyRatio, "SetBuoyancyRatio", "Set the entity's Bouyancy, 0 = sink, 1 = float" )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSetElasticity, "SetElasticity", "Set the entity's Elasticity" )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetElasticity, "GetElasticity", "Get the entity's Elasticity" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptToggleCollisionsOn, "ToggleCollisionsOn", "Toggle Collisions between 2 entities" )
 
 	//TF2 Specific
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSetExplodeProjectilesOnTouch, "SetExplodeProjectilesOnTouch", "Make Some Projectiles explode on contact with this entity." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptCanStickProjectiles, "CanStickProjectiles", "Make Stickybombs attach with this entity." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptCanBeHealed, "CanBeHealed", "Make this entity Healable from Mediguns." )
-	DEFINE_SCRIPTFUNC_NAMED( ScriptSetTargetable, "SetTargetable", "Make this entity Targetable from Bots or Sentryguns." )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetTargetable, "SetTargetable", "UNFINISHED: Make this entity Targetable from Bots or Sentryguns." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSetBurnable, "SetBurnable", "Make this entity catch fire from Pyro weapons.")
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSetObservable, "SetObservable", "Make this entity Observable.")
 	
@@ -4755,6 +4757,20 @@ void CBaseEntity::InputKill( inputdata_t &inputdata )
 		SetOwnerEntity( NULL );
 	}
 
+	if ( IsPlayer() )
+	{
+		CBasePlayer *pPlayer = (CBasePlayer *) this;
+		if ( pPlayer->IsBot() )
+		{
+			if ( pPlayer )
+			{
+				pPlayer->Remove();
+				engine->ServerCommand( UTIL_VarArgs( "kickid %d\n", pPlayer->GetUserID() ) );
+			}
+		}
+		return;
+	}
+
 	UTIL_Remove( this );
 }
 
@@ -4773,6 +4789,20 @@ void CBaseEntity::InputKillHierarchy( inputdata_t &inputdata )
 	{
 		pOwner->DeathNotice( this );
 		SetOwnerEntity( NULL );
+	}
+
+	if ( IsPlayer() )
+	{
+		CBasePlayer *pPlayer = (CBasePlayer *) this;
+		if ( pPlayer->IsBot() )
+		{
+			if ( pPlayer )
+			{
+				pPlayer->Remove();
+				engine->ServerCommand( UTIL_VarArgs( "kickid %d\n", pPlayer->GetUserID() ) );
+			}
+		}
+		return;
 	}
 
 	UTIL_Remove( this );

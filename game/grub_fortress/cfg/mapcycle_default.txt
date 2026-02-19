@@ -57,6 +57,10 @@ pl_swiftwater_final1
 
 // TF:Grub maps
 
+bd_bombyard
+bd_hunted
+ctf_warehouse
+koth_well
 koth_landfall
 koth_lumberyard
-ctf_warehouse
+pl_grubero

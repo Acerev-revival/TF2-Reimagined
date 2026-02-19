@@ -21,6 +21,27 @@ DESCRIPTION INFO_OPTIONS
 		{ BOOL }
 		{ "1" }
 	}
+	"malos"
+	{
+		"Mr Malos - Modeler, Mapper, Playtester"
+		"steamcommunity.com/profiles/76561198177986237"
+		{ BOOL }
+		{ "1" }
+	}
+	"jarate"
+	{
+		"JarateIsCool - SFM class portrait renders"
+		"github.com/Grub-Fortress/grub_fortress_src/pull/1"
+		{ BOOL }
+		{ "1" }
+	}
+	"cheesie"
+	{
+		"cheesie_cake - Playtester"
+		"steamcommunity.com/profiles/76561199057355482"
+		{ BOOL }
+		{ "1" }
+	}
 	"category2"
 	{
 		"Weapon Models"
@@ -73,10 +94,17 @@ DESCRIPTION INFO_OPTIONS
 		{ BOOL }
 		{ "1" }
 	}	
-	"bf2"
+	"cf"
 	{
-		"Better Fortress 2 - The mod Grub Fortress is a fork of"
+		"Custom Fortress - The mod Grub Fortress is a fork of"
 		"github.com/ALIEN31ITA/Better-Fortress-2"
+		{ BOOL }
+		{ "1" }
+	}
+	"lux"
+	{
+		"LUX - ShiroDkxtro2"
+		"github.com/LUX-Shaders-Team/LUX-Shaders"
 		{ BOOL }
 		{ "1" }
 	}
@@ -87,16 +115,30 @@ DESCRIPTION INFO_OPTIONS
 		{ BOOL }
 		{ "1" }
 	}
-	"tf2gr"
+	"bdsbase"
 	{
-		"Team Fortress 2 Goldrush - Removed MYM Hud, And V_Model Support"
-		"www.tf2goldrush.com/"
+		"Source SDK 2013 BDS Base - Quick Search, TF Bot Give Item Cvars, Achievement notifications"
+		"github.com/BitlDevelopmentStudios/source-sdk-2013-bds-base"
+		{ BOOL }
+		{ "1" }
+	}
+	"ficool2"
+	{
+		"Ficool2 - 3rd person chat bubble, chat selection fix, Fix inefficient lookup by name"
+		"https://github.com/ficool2"
+		{ BOOL }
+		{ "1" }
+	}
+	"Horiuchi"
+	{
+		"Horiuchi - Visual timer for vote duration"
+		"https://github.com/horiuchii"
 		{ BOOL }
 		{ "1" }
 	}
 	"ttrf_old_menu"
 	{
-		"Toru the Red Fox - Old TF2 Main menu"
+		"Toru the Red Fox - Old TF2 Main menu code"
 		"github.com/TorutheRedFox/source-sdk-2013"
 		{ BOOL }
 		{ "1" }
@@ -112,6 +154,13 @@ DESCRIPTION INFO_OPTIONS
 	{
 		"Hactica - Ultimate Weapon Animation Fixes"
 		"gamebanana.com/wips/86367"
+		{ BOOL }
+		{ "1" }
+	}
+	"chickenman"
+	{
+		"Chickenman - Sniper Hand Fix"
+		"gamebanana.com/mods/439875"
 		{ BOOL }
 		{ "1" }
 	}

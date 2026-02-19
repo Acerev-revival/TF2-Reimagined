@@ -1,4 +1,4 @@
-//========= Copyright Valve Corporation, All rights reserved. ============//
+﻿//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 //
 //=============================================================================
@@ -22,7 +22,7 @@
 #ifdef TFGRUB_DYNAMICLIGHT_FLAMETHROWER
 #include "dlight.h"
 #include "iefx.h"
-#endif
+#endif // TFGRUB_DYNAMICLIGHT_FLAMETHROWERS
 #endif // CLIENT_DLL
 
 const float tf_flame_burn_index_drain_rate = 1.25f;
@@ -32,6 +32,7 @@ const float tf_flame_burn_index_per_collide_remap_y = 50.f;
 const float tf_flame_burn_index_damage_scale_min = 0.5f;
 
 ConVar tf_flame_dmg_mode_dist( "tf_flame_dmg_mode_dist", "0", FCVAR_REPLICATED | FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY | FCVAR_HIDDEN );
+ConVar cf_revert_flamethrower( "cf_revert_flamethrower", "0", FCVAR_NOTIFY | FCVAR_REPLICATED, "Revert flamethrower to pre-Blue Moon mechanics. 0 = current mechanics (density ramp-up), 1 = pre-Blue Moon (full damage, ~30% more DPS)." );
 
 #ifdef WATERFALL_FLAMETHROWER_TEST
 ConVar tf_flame_waterfall_speed_override( "tf_flame_waterfall_speed_override", "0", FCVAR_REPLICATED );
@@ -536,16 +537,20 @@ float CTFFlameManager::GetFlameDamageScale( const tf_point_t* pPoint, CTFPlayer 
 	if ( pTFTarget 
 		)
 	{
-		float flIndexMod = 1.f;
-		auto iEntIndex = m_mapEntitiesBurnt.Find( pTFTarget );
-		if ( iEntIndex != m_mapEntitiesBurnt.InvalidIndex() )
+		extern ConVar cf_revert_flamethrower;
+		if ( !cf_revert_flamethrower.GetBool() )
 		{
-			flIndexMod = RemapValClamped( m_mapEntitiesBurnt[iEntIndex].m_flHeatIndex, 
+			float flIndexMod = 1.f;
+			auto iEntIndex = m_mapEntitiesBurnt.Find( pTFTarget );
+			if ( iEntIndex != m_mapEntitiesBurnt.InvalidIndex() )
+			{
+				flIndexMod = RemapValClamped( m_mapEntitiesBurnt[iEntIndex].m_flHeatIndex, 
 										  tf_flame_burn_index_per_collide_remap_x, tf_flame_burn_index_per_collide_remap_y, 
 										  tf_flame_burn_index_damage_scale_min, 1.f );
-		}
+			}
 
-		flDamageScale *= flIndexMod;
+			flDamageScale *= flIndexMod;
+		}
 	}
 
 	// should we reduce damage based on reflection?
@@ -1064,23 +1069,34 @@ void CTFFlameManager::Update()
 	}
 
 #ifdef TFGRUB_DYNAMICLIGHT_FLAMETHROWER
-	if (!m_pDynamicLight || (m_pDynamicLight->key != index))
+	FOR_EACH_VEC( GetPointVec(), i )
 	{
-		m_pDynamicLight = effects->CL_AllocDlight(index);
-		assert(m_pDynamicLight);
+		const flame_point_t* pFlame =
+			static_cast<const flame_point_t*>( GetPointVec()[i] );
+
+		if ( !pFlame )
+			continue;
+
+		// Unique key per flame particle
+		int dlightKey = ( entindex() << 8) | ( pFlame->m_nPointIndex & 0xFF );
+
+		dlight_t* dl = effects->CL_AllocDlight( dlightKey );
+		if ( !dl )
+			continue;
+
+		ColorRGBExp32 color;
+		color.r = 255;
+		color.g = 110;
+		color.b = 30;
+		color.exponent = 4;
+
+		dl->origin = pFlame->m_vecPosition;
+		dl->radius = 75.0f;
+		dl->color = color;
+		dl->die = gpGlobals->curtime + 0.1f;
+		dl->decay = 0.0f;
 	}
-
-	ColorRGBExp32 color;
-	color.r = 255;
-	color.g = 100;
-	color.b = 30;
-	color.exponent = 8;
-
-	m_pDynamicLight->radius = 75.f;
-	m_pDynamicLight->origin = GetAbsOrigin();
-	m_pDynamicLight->die = gpGlobals->curtime + 0.05f;
-	m_pDynamicLight->color = color;
-#endif
+#endif // TFGRUB_DYNAMICLIGHT_FLAMETHROWERS
 
 #endif // CLIENT_DLL
 }

@@ -235,7 +235,7 @@ ConVar mp_bonusroundtime( "mp_bonusroundtime", "15", FCVAR_REPLICATED, "Time aft
 ConVar mp_stalemate_meleeonly( "mp_stalemate_meleeonly", "0", FCVAR_REPLICATED | FCVAR_NOTIFY, "Restrict everyone to melee weapons only while in Sudden Death." );
 ConVar mp_forceautoteam( "mp_forceautoteam", "0", FCVAR_REPLICATED | FCVAR_NOTIFY, "Automatically assign players to teams when joining." );
 
-ConVar bf_instantrespawn("bf_instantrespawn", 0, FCVAR_NOTIFY | FCVAR_REPLICATED);
+ConVar cf_instantrespawn("cf_instantrespawn", 0, FCVAR_NOTIFY | FCVAR_REPLICATED);
 
 #if defined( _DEBUG ) || defined( STAGING_ONLY )
 ConVar mp_developer( "mp_developer", "0", FCVAR_ARCHIVE | FCVAR_REPLICATED | FCVAR_NOTIFY, "1: basic conveniences (instant respawn and class change, etc).  2: add combat conveniences (infinite ammo, buddha, etc)" );
@@ -923,7 +923,7 @@ void CTeamplayRoundBasedRules::SetSetup( bool bSetup )
 void CTeamplayRoundBasedRules::CheckWaitingForPlayers( void )
 {
 	// never waiting for players when loading a bug report, or training
-	if ( IsLoadingBugBaitReport() || gpGlobals->eLoadType == MapLoad_Background || !AllowWaitingForPlayers() )
+	if ( IsLoadingBugBaitReport() || gpGlobals->eLoadType == MapLoad_Background || !AllowWaitingForPlayers() || !mp_waitingforplayers_system.GetBool() )
 		return;
 
 	if ( mp_waitingforplayers_restart.GetBool() )
@@ -3019,7 +3019,7 @@ bool CTeamplayRoundBasedRules::ShouldCreateEntity( const char *pszClassName )
 //-----------------------------------------------------------------------------
 bool CTeamplayRoundBasedRules::RoundCleanupShouldIgnore( CBaseEntity *pEnt )
 {
-	return FindInList( s_PreserveEnts, pEnt->GetClassname() );
+	return ( FindInList( s_PreserveEnts, pEnt->GetClassname() ) || pEnt->IsEFlagSet( EFL_KEEP_ON_RECREATE_ENTITIES ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -3469,7 +3469,7 @@ float CTeamplayRoundBasedRules::GetRespawnWaveMaxLength( int iTeam, bool bScaleW
 	if ( mp_disable_respawn_times.GetBool() == true )
 		return 0.0f;
 
-	if ( bf_instantrespawn.GetBool() == true )
+	if ( cf_instantrespawn.GetBool() == true )
 		return 0.0f;
 
 	//Let's just turn off respawn times while players are messing around waiting for the tournament to start

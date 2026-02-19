@@ -145,8 +145,10 @@ static bool LoadSteam( const char *pRootDir )
 	#define STEAM_API_DLL_PATH	"%s\\" PLATFORM_BIN_DIR "\\steam_api64.dll"
 #elif defined( _WIN32 )
 	#define STEAM_API_DLL_PATH	"%s\\" PLATFORM_BIN_DIR "\\steam_api.dll"
+#elif defined( LINUX64 )
+	#define STEAM_API_DLL_PATH	"%s/bin/linux64/libsteam_api.so"
 #elif defined( POSIX )
-	#define STEAM_API_DLL_PATH	"%s/" PLATFORM_BIN_DIR "/libsteam_api.so"
+	#define STEAM_API_DLL_PATH	"%s/bin/libsteam_api.so"
 #endif
 
 	char szBuffer[4096];
@@ -570,7 +572,7 @@ static void WaitForDebuggerConnect( int argc, char *argv[], int time )
 
 static const char *GetExecutableModName( char *pszExePath )
 {
-	static char s_szFinalFilename[ MAX_PATH + 1 ] = "betterfortress";
+	static char s_szFinalFilename[ MAX_PATH + 1 ] = "customfortress";
 
 	char szExePath[ MAX_PATH + 1 ];
 	strncpy( szExePath, pszExePath, sizeof( szExePath ) );
@@ -628,7 +630,7 @@ int main( int argc, char *argv[] )
 	}
 
 	char szExecutable[8192];
-	snprintf(szExecutable, sizeof(szExecutable), "%s/betterfortress.sh", szGameInstallDir );
+	snprintf(szExecutable, sizeof(szExecutable), "%s/customfortress.sh", szGameInstallDir );
 
 	std::vector<char *> new_argv;
 

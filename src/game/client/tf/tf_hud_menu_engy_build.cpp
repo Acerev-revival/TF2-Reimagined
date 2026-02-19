@@ -577,6 +577,42 @@ void CHudMenuEngyBuild::OnTick( void )
 			// we can buy it
 			m_pAvailableObjects[i]->SetVisible( true );
 		}
+
+		// Update the label text for Speed Pad and Jump Pad
+		if ( iRemappedObjectID == OBJ_SPEEDPAD || iRemappedObjectID == OBJ_JUMPPAD )
+		{
+			const wchar_t* pszLocalizedName = nullptr;
+
+			switch ( iRemappedObjectID )
+			{
+			case OBJ_SPEEDPAD:
+				pszLocalizedName = g_pVGuiLocalize->Find( "TF_Object_SpeedPad" );
+				break;
+
+			case OBJ_JUMPPAD:
+				pszLocalizedName = g_pVGuiLocalize->Find( "TF_Object_JumpPad" );
+				break;
+
+			default:
+				break;
+			}
+			
+			if ( pszLocalizedName )
+			{
+				// Update all panel variants with the proper name
+				CExLabel *pLabel = dynamic_cast<CExLabel *>( m_pAvailableObjects[i]->FindChildByName( "ItemNameLabel" ) );
+				if ( pLabel ) pLabel->SetText( pszLocalizedName );
+				
+				pLabel = dynamic_cast<CExLabel *>( m_pAlreadyBuiltObjects[i]->FindChildByName( "ItemNameLabel" ) );
+				if ( pLabel ) pLabel->SetText( pszLocalizedName );
+				
+				pLabel = dynamic_cast<CExLabel *>( m_pCantAffordObjects[i]->FindChildByName( "ItemNameLabel" ) );
+				if ( pLabel ) pLabel->SetText( pszLocalizedName );
+				
+				pLabel = dynamic_cast<CExLabel *>( m_pUnavailableObjects[i]->FindChildByName( "ItemNameLabel" ) );
+				if ( pLabel ) pLabel->SetText( pszLocalizedName );
+			}
+		}
 	}
 }
 
@@ -765,6 +801,117 @@ void CHudMenuEngyBuild::ReplaceBuildings( EngyConstructBuilding_t (&targetBuildi
 	if ( !pLocalPlayer )
 		return;
 
+	// Check if player has pda_builds_pads attribute
+	bool bBuildsPads = false;
+	bool bBuildsSpeedPads = false;
+	bool bBuildsJumpPads = false;
+	for ( int i = 0; i < MAX_WEAPONS; i++ )
+	{
+		C_TFWeaponBase *pWeapon = dynamic_cast<C_TFWeaponBase*>( pLocalPlayer->GetWeapon( i ) );
+		if ( pWeapon && pWeapon->GetWeaponID() == TF_WEAPON_PDA_ENGINEER_BUILD )
+		{
+			int iBuildsPads = 0;
+			int iBuildsSpeedPads = 0;
+			int iBuildsJumpPads = 0;
+			CALL_ATTRIB_HOOK_INT_ON_OTHER( pWeapon, iBuildsSpeedPads, pda_builds_pads );
+			if (iBuildsSpeedPads != 0 )
+			{
+				bBuildsPads = true;
+			}
+			CALL_ATTRIB_HOOK_INT_ON_OTHER( pWeapon, iBuildsSpeedPads, pda_builds_speedpads );
+			if ( iBuildsSpeedPads != 0 )
+			{
+				bBuildsSpeedPads = true;
+			}
+			CALL_ATTRIB_HOOK_INT_ON_OTHER( pWeapon, iBuildsJumpPads, pda_builds_jumppads );
+			if ( iBuildsJumpPads != 0 )
+			{
+				bBuildsJumpPads = true;
+			}
+			break;
+		}
+	}
+
+	// If we have the pads attribute, replace teleporter slots with pads
+	if ( bBuildsPads )
+	{
+		// Replace slot 3 (Teleporter Entrance) with Speed Pad
+		targetBuildings[2] = EngyConstructBuilding_t( true,
+													 OBJ_SPEEDPAD,
+													 0,
+													 "tele_entrance_active.res",
+													 "tele_entrance_already_built.res",
+													 "tele_entrance_cant_afford.res",
+													 "tele_entrance_unavailable.res",
+													 "tele_entrance_active.res",
+													 "tele_entrance_inactive.res",
+													 "tele_entrance_inactive.res" );
+
+		// Replace slot 4 (Teleporter Exit) with Jump Pad
+		targetBuildings[3] = EngyConstructBuilding_t( true,
+													 OBJ_JUMPPAD,
+													 0,
+													 "tele_exit_active.res",
+													 "tele_exit_already_built.res",
+													 "tele_exit_cant_afford.res",
+													 "tele_exit_unavailable.res",
+													 "tele_exit_active.res",
+													 "tele_exit_inactive.res",
+													 "tele_exit_inactive.res" );
+	}
+	else if ( bBuildsSpeedPads )
+	{
+		// Replace slot 3 (Teleporter Entrance) with Speed Pad
+		targetBuildings[2] = EngyConstructBuilding_t(true,
+			OBJ_SPEEDPAD,
+			MODE_SPEEDPAD_1,
+			"tele_entrance_active.res",
+			"tele_entrance_already_built.res",
+			"tele_entrance_cant_afford.res",
+			"tele_entrance_unavailable.res",
+			"tele_entrance_active.res",
+			"tele_entrance_inactive.res",
+			"tele_entrance_inactive.res");
+
+		// Replace slot 4 (Teleporter Exit) with Jump Pad
+		targetBuildings[3] = EngyConstructBuilding_t(true,
+			OBJ_SPEEDPAD,
+			MODE_SPEEDPAD_2,
+			"tele_exit_active.res",
+			"tele_exit_already_built.res",
+			"tele_exit_cant_afford.res",
+			"tele_exit_unavailable.res",
+			"tele_exit_active.res",
+			"tele_exit_inactive.res",
+			"tele_exit_inactive.res");
+	}
+	else if ( bBuildsJumpPads )
+	{
+		// Replace slot 3 (Teleporter Entrance) with Speed Pad
+		targetBuildings[2] = EngyConstructBuilding_t(true,
+			OBJ_JUMPPAD,
+			MODE_JUMPPAD_1,
+			"tele_entrance_active.res",
+			"tele_entrance_already_built.res",
+			"tele_entrance_cant_afford.res",
+			"tele_entrance_unavailable.res",
+			"tele_entrance_active.res",
+			"tele_entrance_inactive.res",
+			"tele_entrance_inactive.res");
+
+		// Replace slot 4 (Teleporter Exit) with Jump Pad
+		targetBuildings[3] = EngyConstructBuilding_t(true,
+			OBJ_JUMPPAD,
+			MODE_JUMPPAD_2,
+			"tele_exit_active.res",
+			"tele_exit_already_built.res",
+			"tele_exit_cant_afford.res",
+			"tele_exit_unavailable.res",
+			"tele_exit_active.res",
+			"tele_exit_inactive.res",
+			"tele_exit_inactive.res");
+	}
+
 	CUtlVector< const EngyBuildingReplacement_t* > vecReplacements;
 
 	// verify the override data to make sure that they don't conflict with each other
@@ -819,7 +966,7 @@ void CHudMenuEngyBuild::ReplaceBuildings( EngyConstructBuilding_t (&targetBuildi
 bool CHudMenuEngyBuild::CanBuild( int iSlot )
 {
 	bool bInTraining = TFGameRules() && TFGameRules()->IsInTraining();
-	bool bInMVMVS = ( TFGameRules() && TFGameRules()->IsMannVsMachineMode() && bf_gamemode_mvmvs.GetBool() );
+	bool bInMVMVS = ( TFGameRules() && TFGameRules()->IsMannVsMachineMode() && cf_gamemode_mvmvs.GetBool() );
 
 	if ( bInMVMVS )
 	{

@@ -97,12 +97,12 @@ jobs:
       - name: Set 64-bit build environment (Linux)
         if: runner.os == 'Linux'
         run: |
-          echo 'export CFLAGS="-m64"' >> $GITHUB_ENV
-          echo 'export CXXFLAGS="-m64"' >> $GITHUB_ENV
-          echo 'export LDFLAGS="-m64"' >> $GITHUB_ENV
+          echo "CFLAGS=-m64" >> $GITHUB_ENV
+          echo "CXXFLAGS=-m64" >> $GITHUB_ENV
+          echo "LDFLAGS=-m64" >> $GITHUB_ENV
+          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
         shell: bash
 
-      # Clean previous builds to avoid architecture conflicts
       - name: Clean previous builds (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -211,5 +211,5 @@ jobs:
       - name: Upload Game Folder
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}-game
+          name: ${{ matrix.artifact_name }}
           path: game/

@@ -42,8 +42,8 @@ ConVar cl_mute_all_comms("cl_mute_all_comms", "1", FCVAR_ARCHIVE, "If 1, then al
 ConVar cl_enable_text_chat( "cl_enable_text_chat", "1", FCVAR_ARCHIVE, "Enable text chat in this game" );
 ConVar cl_clear_chat_on_disconnect( "cl_clear_chat_on_disconnect", "0", FCVAR_ARCHIVE, "Clears the chat history when you disconnect from a server." );
 
-ConVar bf_sound_chatping ( "bf_sound_chatping", "0", FCVAR_NONE, "The Chat will play a sound everytime someone finishes typing." );
-ConVar bf_sound_chatping_file ( "bf_sound_chatping_file", "HudChat.Message", FCVAR_NONE, "The sound for the Chat that will play everytime someone finishes typing." );
+ConVar cf_sound_chatping ( "cf_sound_chatping", "0", FCVAR_NONE, "The Chat will play a sound everytime someone finishes typing." );
+ConVar cf_sound_chatping_file ( "cf_sound_chatping_file", "HudChat.Message", FCVAR_NONE, "The sound for the Chat that will play everytime someone finishes typing." );
 
 
 const int kChatFilterVersion = 1;
@@ -795,10 +795,10 @@ void CBaseHudChat::MsgFunc_SayText( bf_read &msg )
 		Printf( CHAT_FILTER_NONE, "%s", hudtextmessage->LookupString( szString ) );
 	}
 
-	if ( bf_sound_chatping.GetBool() )
+	if ( cf_sound_chatping.GetBool() )
 	{ 
 		CLocalPlayerFilter filter;
-		C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, bf_sound_chatping_file.GetString() );
+		C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, cf_sound_chatping_file.GetString() );
 	}
 
 	Msg( "%s", szString );
@@ -863,10 +863,10 @@ void CBaseHudChat::MsgFunc_SayText2( bf_read &msg )
 
 		Msg( "%s\n", RemoveColorMarkup(ansiString) );
 
-		if ( bf_sound_chatping.GetBool() )
+		if ( cf_sound_chatping.GetBool() )
 		{ 
 			CLocalPlayerFilter filter;
-			C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, bf_sound_chatping_file.GetString() );
+			C_BaseEntity::EmitSound( filter, SOUND_FROM_LOCAL_PLAYER, cf_sound_chatping_file.GetString() );
 		}
 	}
 	else
@@ -1198,7 +1198,7 @@ void CBaseHudChat::StartMessageMode( int iMessageModeType )
 	{
 		case MM_SAY:		pszPrompt = g_pVGuiLocalize->Find( "#chat_say" ); break;
 		case MM_SAY_TEAM:	pszPrompt = g_pVGuiLocalize->Find( "#chat_say_team" ); break;
-		case MM_SAY_PARTY:	pszPrompt = g_pVGuiLocalize->Find( "#chat_party" ); break;
+		case MM_SAY_PARTY:	pszPrompt = g_pVGuiLocalize->Find( "#chat_say_party" ); break;
 	}
 
 	if ( pszPrompt )

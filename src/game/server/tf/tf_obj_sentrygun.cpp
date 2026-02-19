@@ -945,6 +945,10 @@ bool CObjectSentrygun::FindTarget()
 			if ( pTargetPlayer->GetFlags() & FL_NOTARGET )
 				continue;
 
+			//Ignore Spawn protection Uber
+			if ( pTargetPlayer->m_Shared.InCond( TF_COND_INVULNERABLE_HIDE_UNLESS_DAMAGED ) )
+				continue;
+
 			vecTargetCenter = pTargetPlayer->GetAbsOrigin();
 			vecTargetCenter += pTargetPlayer->GetViewOffset();
 			VectorSubtract( vecTargetCenter, vecSentryOrigin, vecSegment );
@@ -1366,7 +1370,7 @@ bool CObjectSentrygun::FireRocket()
 
 		// Setup next rocket shot
 		
-		// Better Fortress - Rocket Firerate attribute
+		// Custom Fortress - Rocket Firerate attribute
 		float flRocketFireRate = 3.f;
 		float flRocketFireRateMod = 1.f;
 		CALL_ATTRIB_HOOK_FLOAT_ON_OTHER( GetOwner(), flRocketFireRateMod, mult_engy_sentry_rockets_firerate );
@@ -1834,6 +1838,17 @@ bool CObjectSentrygun::MoveTurret( void )
 	if ( IsMiniBuilding() )
 	{
 		iBaseTurnRate *= 1.35f;
+	}
+
+	// Apply turn rate multiplier from attributes
+	float flTurnRateMult = 1.0f;
+	if ( GetOwner() && !IsDisposableBuilding() )
+	{
+		CALL_ATTRIB_HOOK_FLOAT_ON_OTHER( GetOwner(), flTurnRateMult, mult_sentry_turn_rate );
+		if ( flTurnRateMult != 1.0f )
+		{
+			iBaseTurnRate = (int)( (float)iBaseTurnRate / flTurnRateMult );
+		}
 	}
 
 	// any x movement?

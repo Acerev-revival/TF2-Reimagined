@@ -1089,6 +1089,20 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	IGameSystem::Add( GetPredictionCopyTester() );
 #endif
 
+#ifndef DEDICATED
+
+	//usually thats in materialsystem but sdk dont have that
+	//overlays freaks out when flashlight support is on while having pyrovision
+	//this check is only for tf mods, because pyrovision is only tf thing
+#if defined( TF_CLIENT_DLL )
+	{
+		ConVarRef( "mat_supportflashlight" ).SetValue( false );
+	}
+#endif
+
+
+#endif
+
 	modemanager->Init( );
 
 	g_pClientMode->InitViewport();
@@ -1721,17 +1735,21 @@ void CHLClient::LevelInitPreEntity( char const* pMapName )
 
 		char buffer[256];
 		//Change gamemode TEST
-		if(!Q_strnicmp(pMapName,"mvm_",4))
+		if ( !Q_strnicmp(pMapName,"mvm_",4 ) )
 		{
 			discordPresence.state = "Mann Vs. Machine";
 		}
-		else if(!Q_strnicmp(pMapName,"pass_",5))
+		else if ( !Q_strnicmp(pMapName,"pass_",5 ) )
 		{
 			discordPresence.state = "Passtime";
 		}
-		else if(!Q_strnicmp(pMapName,"koth_",5))
+		else if ( !Q_strnicmp(pMapName,"koth_",5 ) )
 		{
 			discordPresence.state = "King of the Hill";
+		}
+		else if ( !Q_strnicmp(pMapName, "bd_", 5 ) )
+		{
+			discordPresence.state = "Bomb Delivery";
 		}
 		else
 			discordPresence.state = "In-Game";
@@ -2656,6 +2674,23 @@ void CHLClient::WriteSaveGameScreenshotOfSize( const char *pFilename, int width,
 											   bool bWriteVTF/*=false*/ )
 {
 	view->WriteSaveGameScreenshotOfSize( pFilename, width, height, bCreatePowerOf2Padded, bWriteVTF );
+}
+
+CON_COMMAND(WriteGameScreenshot, "WriteSaveGameScreenshotOfSize")
+{
+	if (args.ArgC() == 6)
+	{
+		const char *pFilename = args[1];
+		int width = atoi(args[2]);
+		int height = atoi(args[3]);
+		int bCreatePowerOf2Padded = atoi(args[4]);
+		int bWriteVTF = atoi(args[5]);
+		view->WriteSaveGameScreenshotOfSize( pFilename, width, height, !!bCreatePowerOf2Padded, !!bWriteVTF );
+	}
+	else
+	{
+		Msg( "Format: WriteGameScreenshot <filename> <width> <height> <pad> <writevtf>\n" );
+	}
 }
 
 // See RenderViewInfo_t

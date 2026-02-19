@@ -31,10 +31,76 @@
 #include <../common/GameUI/cvarslider.h>
 #include "filesystem.h"
 #include "hud_controlpointicons.h"
+#include "tf_statsummary.h"
 
 ConVar cl_map("cl_map", "-1");
 
 using namespace vgui;
+
+//-----------------------------------------------------------------------------
+// CMapPreviewImage - Simple IImage wrapper for workshop map preview textures
+//-----------------------------------------------------------------------------
+CMapPreviewImage::CMapPreviewImage()
+	: m_nTextureID(-1)
+	, m_nX(0)
+	, m_nY(0)
+	, m_nWide(0)
+	, m_nTall(0)
+	, m_nImageWidth(0)
+	, m_nImageHeight(0)
+	, m_bValid(false)
+{
+	m_Color = Color(255, 255, 255, 255);
+}
+
+CMapPreviewImage::~CMapPreviewImage()
+{
+	Clear();
+}
+
+void CMapPreviewImage::SetTextureRGBA(const byte* rgba, int width, int height)
+{
+	if (!rgba || width <= 0 || height <= 0)
+		return;
+	
+	if (m_nTextureID == -1)
+	{
+		m_nTextureID = surface()->CreateNewTextureID(true);
+	}
+	
+	surface()->DrawSetTextureRGBAEx(m_nTextureID, rgba, width, height, IMAGE_FORMAT_RGBA8888);
+	
+	m_nImageWidth = width;
+	m_nImageHeight = height;
+	
+	// Set size to image dimensions (ImagePanel will override via SetSize when scaling)
+	m_nWide = width;
+	m_nTall = height;
+	
+	m_bValid = true;
+}
+
+void CMapPreviewImage::Clear()
+{
+	if (m_nTextureID != -1)
+	{
+		surface()->DestroyTextureID(m_nTextureID);
+		m_nTextureID = -1;
+	}
+	m_bValid = false;
+	m_nImageWidth = 0;
+	m_nImageHeight = 0;
+}
+
+void CMapPreviewImage::Paint()
+{
+	if (!m_bValid || m_nTextureID == -1)
+		return;
+	
+	surface()->DrawSetTexture(m_nTextureID);
+	surface()->DrawSetColor(m_Color);
+	surface()->DrawTexturedRect(m_nX, m_nY, m_nX + m_nWide, m_nY + m_nTall);
+}
 
 wchar_t* LocalizeNumberWithToken( const char* pszLocToken, int nValue )
 {
@@ -662,6 +728,8 @@ CTFAdvancedOptionsDialog::CTFAdvancedOptionsDialog(vgui::Panel *parent) : BaseCl
 	m_pListPanel = new vgui::PanelListPanel( this, "PanelListPanel" );
 
 	m_pList = NULL;
+	m_pSearchEntry = NULL;
+	m_szLastSearchFilter[0] = '\0';
 
 	m_pToolTip = new CTFTextToolTip( this );
 	m_pToolTipEmbeddedPanel = new vgui::EditablePanel( this, "TooltipPanel" );
@@ -697,6 +765,13 @@ void CTFAdvancedOptionsDialog::ApplySchemeSettings( vgui::IScheme *pScheme )
 
 	LoadControlSettings("resource/ui/TFAdvancedOptionsDialog.res");
 	m_pListPanel->SetFirstColumnWidth( 0 );
+
+	// Find the search entry control
+	m_pSearchEntry = dynamic_cast<TextEntry*>( FindChildByName( "SearchEntry" ) );
+	if ( m_pSearchEntry )
+	{
+		m_pSearchEntry->AddActionSignalTarget( this );
+	}
 
 	CreateControls();
 }
@@ -1177,6 +1252,153 @@ void CTFAdvancedOptionsDialog::Deploy( void )
 	vgui::surface()->GetWorkspaceBounds( x, y, ww, wt );
 	GetSize(wide, tall);
 	SetPos(x + ((ww - wide) / 2), y + ((wt - tall) / 2));
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called when search text changes
+//-----------------------------------------------------------------------------
+void CTFAdvancedOptionsDialog::OnTextChanged( vgui::Panel *panel )
+{
+	if ( panel == m_pSearchEntry )
+	{
+		FilterOptions();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Monitor for search filter changes
+//-----------------------------------------------------------------------------
+void CTFAdvancedOptionsDialog::OnThink()
+{
+	BaseClass::OnThink();
+
+	// Check if search filter has changed
+	if ( m_pSearchEntry )
+	{
+		char szCurrentSearch[256] = { 0 };
+		m_pSearchEntry->GetText( szCurrentSearch, sizeof( szCurrentSearch ) );
+
+		if ( Q_strcmp( szCurrentSearch, m_szLastSearchFilter ) != 0 )
+		{
+			V_strncpy( m_szLastSearchFilter, szCurrentSearch, sizeof( m_szLastSearchFilter ) );
+			FilterOptions();
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Filter the options list based on search text
+//-----------------------------------------------------------------------------
+void CTFAdvancedOptionsDialog::FilterOptions()
+{
+	if ( !m_pListPanel )
+		return;
+
+	// Get the search filter text
+	char szSearchFilter[256] = { 0 };
+	if ( m_pSearchEntry )
+	{
+		m_pSearchEntry->GetText( szSearchFilter, sizeof( szSearchFilter ) );
+		Q_strlower( szSearchFilter );
+	}
+
+	bool bHasFilter = ( szSearchFilter[0] != '\0' );
+
+	// If no filter, show everything in original order
+	if ( !bHasFilter )
+	{
+		mpcontrol_t *pList = m_pList;
+		while ( pList )
+		{
+			pList->SetVisible( true );
+			pList = pList->next;
+		}
+		m_pListPanel->InvalidateLayout();
+		return;
+	}
+
+	// Clear the panel list and rebuild with matches first
+	m_pListPanel->RemoveAll();
+
+	// First pass: Add matching items
+	mpcontrol_t *pList = m_pList;
+	while ( pList )
+	{
+		bool bMatches = false;
+
+		if ( pList->pScrObj )
+		{
+			// Search in the prompt text
+			char szLowerPrompt[256];
+			V_strncpy( szLowerPrompt, pList->pScrObj->prompt, sizeof( szLowerPrompt ) );
+			Q_strlower( szLowerPrompt );
+
+			// Search in the cvar name
+			char szLowerCvar[256];
+			V_strncpy( szLowerCvar, pList->pScrObj->cvarname, sizeof( szLowerCvar ) );
+			Q_strlower( szLowerCvar );
+
+			// Search in the tooltip
+			char szLowerTooltip[256] = { 0 };
+			if ( pList->pScrObj->tooltip && pList->pScrObj->tooltip[0] )
+			{
+				V_strncpy( szLowerTooltip, pList->pScrObj->tooltip, sizeof( szLowerTooltip ) );
+				Q_strlower( szLowerTooltip );
+			}
+
+			// Check if search text is found
+			bMatches = ( V_strstr( szLowerPrompt, szSearchFilter ) != NULL ) ||
+					   ( V_strstr( szLowerCvar, szSearchFilter ) != NULL ) ||
+					   ( szLowerTooltip[0] != '\0' && V_strstr( szLowerTooltip, szSearchFilter ) != NULL );
+		}
+
+		if ( bMatches )
+		{
+			pList->SetVisible( true );
+			m_pListPanel->AddItem( NULL, pList );
+		}
+
+		pList = pList->next;
+	}
+
+	// Second pass: Add non-matching items (hidden)
+	pList = m_pList;
+	while ( pList )
+	{
+		bool bMatches = false;
+
+		if ( pList->pScrObj )
+		{
+			char szLowerPrompt[256];
+			V_strncpy( szLowerPrompt, pList->pScrObj->prompt, sizeof( szLowerPrompt ) );
+			Q_strlower( szLowerPrompt );
+
+			char szLowerCvar[256];
+			V_strncpy( szLowerCvar, pList->pScrObj->cvarname, sizeof( szLowerCvar ) );
+			Q_strlower( szLowerCvar );
+
+			char szLowerTooltip[256] = { 0 };
+			if ( pList->pScrObj->tooltip && pList->pScrObj->tooltip[0] )
+			{
+				V_strncpy( szLowerTooltip, pList->pScrObj->tooltip, sizeof( szLowerTooltip ) );
+				Q_strlower( szLowerTooltip );
+			}
+
+			bMatches = ( V_strstr( szLowerPrompt, szSearchFilter ) != NULL ) ||
+					   ( V_strstr( szLowerCvar, szSearchFilter ) != NULL ) ||
+					   ( szLowerTooltip[0] != '\0' && V_strstr( szLowerTooltip, szSearchFilter ) != NULL );
+		}
+
+		if ( !bMatches )
+		{
+			pList->SetVisible( false );
+			m_pListPanel->AddItem( NULL, pList );
+		}
+
+		pList = pList->next;
+	}
+
+	m_pListPanel->InvalidateLayout();
 }
 
 //-----------------------------------------------------------------------------
@@ -2239,6 +2461,7 @@ void CTFLogoPanel::PaintTFLogo( float flAngle, const Color& color ) const
 void CTFLogoPanel::Paint()
 {
 	m_flOffsetAngle += gpGlobals->frametime * m_flVelocity;
+	m_flOffsetAngle = fmodf( m_flOffsetAngle, 360.f );
 	PaintTFLogo( m_flOffsetAngle, GetFgColor() );
 	BaseClass::Paint();
 }
@@ -2542,7 +2765,7 @@ void CTFModCreditsDialog::ApplySchemeSettings(vgui::IScheme* pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
 
-	LoadControlSettings("resource/ui/TFModCreditsDialog.res");
+	LoadControlSettings( RES_CREDITSMENU );
 	m_pListPanel->SetFirstColumnWidth(0);
 
 	CreateControls();
@@ -2984,8 +3207,8 @@ void CTFModCreditsDialog::Deploy(void)
 
 
 #define CREATE_SERVER_DIR "cfg"
-#define DEFAULT_CREATE_SERVER_FILE CREATE_SERVER_DIR "/server_options_default.scr"
-#define CREATE_SERVER_FILE CREATE_SERVER_DIR "/server_options.scr"
+#define DEFAULT_CREATE_SERVER_FILE CREATE_SERVER_DIR "/server_options_default.txt"
+#define CREATE_SERVER_FILE CREATE_SERVER_DIR "/server_options.txt"
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
@@ -2998,19 +3221,16 @@ CTFCreateServerDialog::CTFCreateServerDialog(vgui::Panel* parent) : PropertyDial
 	SetProportional(true);
 
 	m_pList = NULL;
-
-	m_pPageOne = new vgui::PanelListPanel(this, "PageOne");
-	AddPage( m_pPageOne, "#GameUI_Server" );
-
-	m_pPageTwo = new vgui::PanelListPanel(this, "PageTwo");
-	AddPage( m_pPageTwo, "#Replay_Contest_Rules" );
-
-	m_pPageTwo->SetVisible( false );
-
-	m_pPageThree = new vgui::PanelListPanel(this, "PageThree");
-	AddPage( m_pPageThree, "#GameUI_GameMenu_Options" );
-
-	m_pPageThree->SetVisible( false );
+	m_pMapSearchEntry = NULL;
+	m_pWorkshopFilterCheck = NULL;
+	m_pOptionsSearchEntry = NULL;
+	m_szLastSearchFilter[0] = '\0';
+	m_szLastOptionsSearchFilter[0] = '\0';
+	m_bLastWorkshopOnly = false;
+	m_hPendingPreviewRequest = INVALID_HTTPREQUEST_HANDLE;
+	m_nCurrentPreviewFileID = 0;
+	m_pWorkshopPreviewImage = new CMapPreviewImage();
+	m_nLastDisplayedMapFileID = 0;
 
 	m_pToolTip = new CTFTextToolTip(this);
 	m_pToolTipEmbeddedPanel = new vgui::EditablePanel(this, "TooltipPanel");
@@ -3020,13 +3240,62 @@ CTFCreateServerDialog::CTFCreateServerDialog(vgui::Panel* parent) : PropertyDial
 	m_pToolTip->SetTooltipDelay(0);
 
 	m_pDescription = new CInfoDescription();
-	m_pDescription->InitFromFile( DEFAULT_CREATE_SERVER_FILE );
-	m_pDescription->InitFromFile( CREATE_SERVER_FILE, false );
-	//m_pDescription->TransferCurrentValues( NULL ); <- Took an hour away from my life
 
-	// 	MoveToCenterOfScreen();
-	// 	SetSizeable( false );
-	// 	SetDeleteSelfOnClose( true );
+	// If this can be simplified, I'd gladly take it.
+
+	KeyValuesAD pFileKV( "OPTIONS" );
+	if ( !pFileKV->LoadFromFile( g_pFullFileSystem, CREATE_SERVER_FILE, "MOD" ) && !pFileKV->LoadFromFile( g_pFullFileSystem, DEFAULT_CREATE_SERVER_FILE, "MOD" ) )
+		return;
+
+	int i = 0;
+	for ( KeyValues *pCurTab = pFileKV->GetFirstSubKey(); pCurTab; pCurTab = pCurTab->GetNextKey() )
+	{
+		// 1st layer: Tabs
+		const char *pTabName = pCurTab->GetName();
+		m_pPages.AddToTail( new vgui::PanelListPanel(this, pTabName) );
+		AddPage(m_pPages[i], pTabName);
+		Warning("Adding page: %s\n", pTabName);
+		for (KeyValues* pCurOption = pCurTab->GetFirstSubKey(); pCurOption; pCurOption = pCurOption->GetNextKey())
+		{
+			// 2nd layer: Options in tab
+			const char *pOptionName = pCurOption->GetName();
+			CScriptObject *pObj = new CScriptObject();
+
+			char type[64];
+			const char *pParamType = pCurOption->GetString( "type" );
+			Q_strncpy( type, pParamType, sizeof( type ) );
+			Q_strncpy( pObj->cvarname, pOptionName, sizeof( pObj->cvarname ) );
+			Q_strncpy( pObj->prompt, pCurOption->GetString( "label", "Unnamed" ), sizeof( pObj->prompt ) );
+			Q_strncpy( pObj->tooltip, pCurOption->GetString( "tooltip" ), sizeof( pObj->tooltip ) );
+			Q_strncpy( pObj->defValue, pCurOption->GetString( "val" ), sizeof( pObj->defValue ) );
+			Q_strncpy( pObj->curValue, pObj->defValue, sizeof( pObj->curValue ) );
+			pObj->fdefValue = atof( pObj->defValue );
+
+			pObj->type = pObj->GetType( type );
+
+			for ( KeyValues *pCurParam = pCurOption->GetFirstSubKey(); pCurParam; pCurParam = pCurParam->GetNextKey() )
+			{
+				const char *pParamName = pCurParam->GetName();
+				if (!V_stricmp(pParamName, "options"))
+				{
+					for ( KeyValues *pCurListItem = pCurParam->GetFirstSubKey(); pCurListItem; pCurListItem = pCurListItem->GetNextKey() )
+					{
+						CScriptListItem *pItem;
+						pItem = new CScriptListItem( pCurListItem->GetName(), pCurListItem->GetString() );
+						pObj->AddItem( pItem );
+					}
+				}
+
+			}
+			pObj->objParent = m_pPages[i];
+			m_pDescription->AddObject( pObj );
+		}
+		i++;
+	}
+
+	// do not init this way as it's harder to get tabs working
+	//m_pDescription->InitFromFile( DEFAULT_CREATE_SERVER_FILE );
+	//m_pDescription->InitFromFile( CREATE_SERVER_FILE, false );
 }
 
 //-----------------------------------------------------------------------------
@@ -3035,6 +3304,7 @@ CTFCreateServerDialog::CTFCreateServerDialog(vgui::Panel* parent) : PropertyDial
 CTFCreateServerDialog::~CTFCreateServerDialog()
 {
 	delete m_pDescription;
+	delete m_pWorkshopPreviewImage;
 }
 
 //-----------------------------------------------------------------------------
@@ -3045,10 +3315,21 @@ void CTFCreateServerDialog::ApplySchemeSettings(vgui::IScheme* pScheme)
 	BaseClass::ApplySchemeSettings(pScheme);
 
 	CreateControls();
-	LoadControlSettings("resource/ui/TFModServerDialog.res");
-	m_pPageOne->SetFirstColumnWidth(0);
-	m_pPageTwo->SetFirstColumnWidth(0);
-	m_pPageThree->SetFirstColumnWidth(0);
+	LoadControlSettings( RES_SERVERMENU );
+
+	// Find the options search entry control
+	m_pOptionsSearchEntry = dynamic_cast<TextEntry*>( FindChildByName( "OptionsSearchEntry" ) );
+	if ( m_pOptionsSearchEntry )
+	{
+		m_pOptionsSearchEntry->AddActionSignalTarget( this );
+	}
+
+	FOR_EACH_VEC(m_pPages, i)
+	{
+		m_pPages[i]->SetFirstColumnWidth(0);
+		m_pPages[i]->SetVisible( false );
+	}
+	m_pPages[0]->SetVisible( true );
 
 	SetOKButtonVisible(false);
 	SetCancelButtonVisible(false);
@@ -3088,6 +3369,82 @@ void CTFCreateServerDialog::OnCommand(const char* command)
 	else if (!stricmp(command, "Close"))
 	{
 		SaveValues();
+		OnClose();
+		return;
+	}
+	else if (!stricmp(command, "FixUI"))
+	{
+		// Reset server_options.txt by copying from default
+		if (g_pFullFileSystem->FileExists(DEFAULT_CREATE_SERVER_FILE, "MOD"))
+		{
+			// Delete existing server_options.txt
+			g_pFullFileSystem->RemoveFile(CREATE_SERVER_FILE, "MOD");
+			
+			// Reload everything
+			DestroyControls();
+			
+			// Reinitialize from default file
+			if (m_pDescription)
+			{
+				delete m_pDescription;
+				m_pDescription = new CInfoDescription();
+			}
+			
+			m_pList = NULL;
+			m_pPages.RemoveAll();
+			
+			KeyValuesAD pFileKV("OPTIONS");
+			if (pFileKV->LoadFromFile(g_pFullFileSystem, DEFAULT_CREATE_SERVER_FILE, "MOD"))
+			{
+				int i = 0;
+				for (KeyValues *pCurTab = pFileKV->GetFirstSubKey(); pCurTab; pCurTab = pCurTab->GetNextKey())
+				{
+					const char *pTabName = pCurTab->GetName();
+					m_pPages.AddToTail(new vgui::PanelListPanel(this, pTabName));
+					AddPage(m_pPages[i], pTabName);
+					
+					for (KeyValues* pCurOption = pCurTab->GetFirstSubKey(); pCurOption; pCurOption = pCurOption->GetNextKey())
+					{
+						const char *pOptionName = pCurOption->GetName();
+						CScriptObject *pObj = new CScriptObject();
+						
+						char type[64];
+						const char *pParamType = pCurOption->GetString("type");
+						Q_strncpy(type, pParamType, sizeof(type));
+						Q_strncpy(pObj->cvarname, pOptionName, sizeof(pObj->cvarname));
+						Q_strncpy(pObj->prompt, pCurOption->GetString("label", "Unnamed"), sizeof(pObj->prompt));
+						Q_strncpy(pObj->tooltip, pCurOption->GetString("tooltip"), sizeof(pObj->tooltip));
+						Q_strncpy(pObj->defValue, pCurOption->GetString("val"), sizeof(pObj->defValue));
+						Q_strncpy(pObj->curValue, pObj->defValue, sizeof(pObj->curValue));
+						pObj->fdefValue = atof(pObj->defValue);
+						
+						pObj->type = pObj->GetType(type);
+						
+						for (KeyValues *pCurParam = pCurOption->GetFirstSubKey(); pCurParam; pCurParam = pCurParam->GetNextKey())
+						{
+							const char *pParamName = pCurParam->GetName();
+							if (!V_stricmp(pParamName, "options"))
+							{
+								for (KeyValues *pCurListItem = pCurParam->GetFirstSubKey(); pCurListItem; pCurListItem = pCurListItem->GetNextKey())
+								{
+									CScriptListItem *pItem;
+									pItem = new CScriptListItem(pCurListItem->GetName(), pCurListItem->GetString());
+									pObj->AddItem(pItem);
+								}
+							}
+						}
+						pObj->objParent = m_pPages[i];
+						m_pDescription->AddObject(pObj);
+					}
+					i++;
+				}
+			}
+			
+			// Recreate controls with default values
+			CreateControls();
+			LoadMapList();
+			InvalidateLayout();
+		}
 		OnClose();
 		return;
 	}
@@ -3137,7 +3494,37 @@ void CTFCreateServerDialog::OnCommand(const char* command)
 
 						pItem = pItem->pNext;
 					}
-					engine->ClientCmd_Unrestricted(CFmtStr("map %s", pItem->szItemText));
+					// Show the stats summary panel as a loading screen before changing level
+					CTFStatsSummaryPanel *pStatsPanel = GStatsSummaryPanel();
+					if ( pStatsPanel )
+					{
+						pStatsPanel->OnMapLoad( pItem->szItemText );
+						pStatsPanel->SetVisible( true );
+						pStatsPanel->MoveToFront();
+					}
+					
+					// Check if this is a Workshop map by looking for the map in our list
+					bool bIsWorkshopMap = false;
+					PublishedFileId_t workshopFileID = 0;
+					FOR_EACH_VEC( m_vecAllMaps, i )
+					{
+						if ( V_stricmp( m_vecAllMaps[i].Get(), pItem->szItemText ) == 0 )
+						{
+							bIsWorkshopMap = m_vecIsWorkshopMap[i];
+							workshopFileID = m_vecMapFileIDs[i];
+							break;
+						}
+					}
+					
+					// Use host_workshop_map for Workshop maps, regular map command for others
+					if ( bIsWorkshopMap && workshopFileID != 0 )
+					{
+						engine->ClientCmd_Unrestricted(CFmtStr("progress_enable; host_workshop_map %llu", workshopFileID));
+					}
+					else
+					{
+						engine->ClientCmd_Unrestricted(CFmtStr("progress_enable; map %s", pItem->szItemText));
+					}
 				}
 			}
 		}
@@ -3146,6 +3533,30 @@ void CTFCreateServerDialog::OnCommand(const char* command)
 	}
 
 	BaseClass::OnCommand(command);
+}
+
+const char* GetTypeName( int type ) 
+{
+	switch (type)
+	{
+		case O_BOOL:
+			return "BOOL";
+		case O_NUMBER:
+			return "NUMBER";
+		case O_LIST:
+			return "LIST";
+		case O_STRING:
+			return "STRING";
+		case O_SLIDER:
+			return "SLIDER";
+		case O_CATEGORY:
+			return "CATEGORY";
+		case O_BUTTON:
+			return "BUTTON";
+		default:
+		case O_OBSOLETE:
+			return "OBSOLETE";
+	}
 }
 
 void CTFCreateServerDialog::SaveValues() 
@@ -3158,16 +3569,88 @@ void CTFCreateServerDialog::SaveValues()
 	{
 		FileHandle_t fp;
 
-		// Add settings to config.cfg
-		//m_pDescription->WriteToConfig();
+		KeyValuesAD pFileKV( "OPTIONS" );
+
+		mpcontrol_t *pList;
+
+		CScriptObject *pObj;
+		CScriptListItem *pItem;
+
+		char szValue[256];
+		char strValue[ 256 ];
+
+		pList = m_pList;
+
+		// This is a mess of sphagetti code, someone please simplify this!
+
+		FOR_EACH_VEC(m_pPages, i)
+		{
+			KeyValues *pTabKV = new KeyValues( m_pPages[i]->GetName() );
+			pTabKV->SetString( "NO OPTIONS", "" );	// Ading this to force the tab to show up
+			pFileKV->AddSubKey( pTabKV );
+		}
+
+		while ( pList )
+		{
+			pObj = pList->pScrObj;
+			Msg( "CVAR: %s LABEL: %s TOOLTIP: %s TYPE: %s VAL: %s PARENT: %s\n", pObj->cvarname, pObj->prompt, pObj->tooltip, GetTypeName(pObj->type), pObj->curValue, pObj->objParent->GetName() );
+
+			// If there's already an entry with this index, overwrite the data.
+			KeyValues *pTabKV = pFileKV->FindKey( pObj->objParent->GetName() );
+			if ( !pTabKV )
+			{
+				pTabKV = new KeyValues( pObj->objParent->GetName() );
+				pFileKV->AddSubKey( pTabKV );
+			}
+
+			KeyValues *pCvarKV = new KeyValues( pObj->cvarname );
+			pCvarKV->SetString( "label", pObj->prompt );
+			pCvarKV->SetString( "tooltip", pObj->tooltip );
+			pCvarKV->SetString( "type", GetTypeName( pObj->type ) );
+			if (pObj->type == O_LIST)
+			{
+				KeyValues *pOptionsKV = new KeyValues( "options" );
+				CScriptListItem *pItem = pObj->pListItems;
+				if ( pItem )
+				{
+					while ( pItem )
+					{
+						pOptionsKV->SetString( pItem->szItemText, pItem->szValue );
+						pItem = pItem->pNext;
+					}
+					pCvarKV->AddSubKey( pOptionsKV );
+				}
+			}
+			pCvarKV->SetString( "val", pObj->curValue );
+			pTabKV->AddSubKey( pCvarKV );
+
+
+			KeyValues *pTempKV = pTabKV->FindKey( "NO OPTIONS" );
+			if( pTempKV )
+			{
+				pTabKV->RemoveSubKey( pTempKV );
+			}
+			pList = pList->next;
+		}
 
 		g_pFullFileSystem->CreateDirHierarchy( CREATE_SERVER_DIR );
 		fp = g_pFullFileSystem->Open( CREATE_SERVER_FILE, "wb" );
 		if ( fp )
 		{
-			m_pDescription->WriteToScriptFile( fp );
+			pFileKV->SaveToFile(g_pFullFileSystem, CREATE_SERVER_FILE);
 			g_pFullFileSystem->Close( fp );
 		}
+
+		// Add settings to config.cfg
+		//m_pDescription->WriteToConfig();
+
+		/*g_pFullFileSystem->CreateDirHierarchy(CREATE_SERVER_DIR);
+		fp = g_pFullFileSystem->Open( CREATE_SERVER_FILE, "wb" );
+		if ( fp )
+		{
+			m_pDescription->WriteToScriptFile( fp );
+			g_pFullFileSystem->Close( fp );
+		}*/
 	}
 }
 
@@ -3313,49 +3796,9 @@ void CTFCreateServerDialog::CreateControls()
 
 	pObj = m_pDescription->pObjList;
 
-	// Build out the maps dropdown
-	CUtlVector< CUtlString > m_vecMaps;
-	FileFindHandle_t mapHandle;
-	const char* pPopFileName = filesystem->FindFirstEx( "maps/*.bsp", "GAME", &mapHandle );
-
-	while ( pPopFileName && pPopFileName[ 0 ] != '\0' )
-	{
-		// Skip it if it's a directory or is the folder info
-		if ( filesystem->FindIsDirectory( mapHandle ) )
-		{
-			pPopFileName = filesystem->FindNext( mapHandle );
-			continue;
-		}
-
-		if ( pPopFileName )
-		{
-			char szShortName[MAX_PATH] = { 0 };
-			V_strncpy( szShortName, pPopFileName, sizeof( szShortName ) );
-			V_StripExtension( szShortName, szShortName, sizeof( szShortName ) );
-
-			if ( m_vecMaps.Find( szShortName ) == m_vecMaps.InvalidIndex() )
-			{
-				m_vecMaps.AddToTail( szShortName );
-				DevMsg( "Adding Map: '%s' to list\n", szShortName );
-			}
-		}
-
-		pPopFileName = filesystem->FindNext( mapHandle );
-	}
-
-	filesystem->FindClose( mapHandle );
-
-	CScriptObject *pMapInfoObj = m_pDescription->FindObject( "cl_map" );
-	if ( pMapInfoObj )
-	{
-		pMapInfoObj->RemoveAndDeleteAllItems();
-		int iCount = m_vecMaps.Count();
-		pMapInfoObj->AddItem( new CScriptListItem( "#GameUI_RandomMap", "-1" ) );
-		for ( int k = 0; k < iCount; ++ k )
-		{
-			pMapInfoObj->AddItem( new CScriptListItem( m_vecMaps[k], CFmtStr("%i", k)));
-		}
-	}
+	// Load maps and build the dropdown
+	LoadMapList();
+	RefreshMapList();
 
 	mpcontrol_t	*pCtrl;
 
@@ -3366,21 +3809,28 @@ void CTFCreateServerDialog::CreateControls()
 	CCvarSlider *pSlider;
 	CScriptListItem *pListItem;
 
-	Panel *objParent = m_pPageOne;
+	//Panel *objParent = m_pPageOne;
 
 	IScheme *pScheme = scheme()->GetIScheme( GetScheme() );
-	vgui::HFont hTextFont = pScheme->GetFont( "HudFontSmallestBold", true );
+	vgui::HFont hTextFont = pScheme->GetFont( "HudFontSmallest", true );
 	Color tanDark = pScheme->GetColor( "TanDark", Color(255,0,0,255) );
+
+	Warning( "CreateControls: Starting to process objects, pObj=%p\n", pObj );
 
 	while ( pObj )
 	{
+		Warning( "CreateControls: Processing '%s' type=%d\n", pObj->cvarname, pObj->type );
+		
 		if ( pObj->type == O_OBSOLETE )
 		{
 			pObj = pObj->pNext;
 			continue;
 		}
 
-		pCtrl = new mpcontrol_t( objParent, pObj->cvarname );
+		Panel *objParent = pObj->objParent;
+		PanelListPanel *objParentList = (PanelListPanel *) pObj->objParent;
+
+		pCtrl = new mpcontrol_t( objParent, pObj->cvarname);
 		pCtrl->type = pObj->type;
 
 		// Force it to invalidate scheme now, so we can change color afterwards and have it persist
@@ -3468,7 +3918,7 @@ void CTFCreateServerDialog::CreateControls()
 
 			if ( pCtrl->type == O_CATEGORY )
 			{
-				pCtrl->pPrompt->SetFont( pScheme->GetFont( "HudFontSmallBold", true ) );
+				pCtrl->pPrompt->SetFont( pScheme->GetFont( "HudFontSmall", true ) );
 				pCtrl->pPrompt->SetFgColor( pScheme->GetColor( "TanLight", Color(255,0,0,255) ) );
 			}
 			else
@@ -3510,7 +3960,28 @@ void CTFCreateServerDialog::CreateControls()
 			}
 		}
 
-		m_pPageOne->AddItem( NULL, pCtrl );
+		objParentList->AddItem( NULL, pCtrl );
+
+		// Store references to the map filter controls
+		if ( !Q_stricmp( pObj->cvarname, "cl_map_search" ) && pCtrl->pControl )
+		{
+			m_pMapSearchEntry = dynamic_cast<TextEntry*>( pCtrl->pControl );
+			if ( m_pMapSearchEntry )
+			{
+				Warning( "Found map search entry: %p\n", m_pMapSearchEntry );
+				m_pMapSearchEntry->AddActionSignalTarget( this );
+				m_pMapSearchEntry->SendNewLine( true );  // Send signal on enter key
+			}
+		}
+		else if ( !Q_stricmp( pObj->cvarname, "cl_map_workshop_only" ) && pCtrl->pControl )
+		{
+			m_pWorkshopFilterCheck = dynamic_cast<CheckButton*>( pCtrl->pControl );
+			if ( m_pWorkshopFilterCheck )
+			{
+				Warning( "Found workshop filter check: %p\n", m_pWorkshopFilterCheck );
+				m_pWorkshopFilterCheck->AddActionSignalTarget( this );
+			}
+		}
 
 		// Link it in
 		if ( !m_pList )
@@ -3545,6 +4016,10 @@ void CTFCreateServerDialog::DestroyControls()
 {
 	mpcontrol_t* p, * n;
 
+	// Clear references to filter controls
+	m_pMapSearchEntry = NULL;
+	m_pWorkshopFilterCheck = NULL;
+
 	p = m_pList;
 	while (p)
 	{
@@ -3565,6 +4040,423 @@ void CTFCreateServerDialog::DestroyControls()
 	}
 
 	m_pList = NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Loads all maps from disk into the map list
+//-----------------------------------------------------------------------------
+void CTFCreateServerDialog::LoadMapList()
+{
+	m_vecAllMaps.RemoveAll();
+	m_vecIsWorkshopMap.RemoveAll();
+	m_vecMapFileIDs.RemoveAll();
+
+	// Helper lambda to check if a map name already exists
+	// Compares base name (strips workshop/ prefix and .ugcXXXX suffix)
+	auto MapExists = [this]( const char* szMapName ) -> bool
+	{
+		// Extract base name from input
+		char szBaseName[MAX_PATH];
+		V_strncpy( szBaseName, szMapName, sizeof( szBaseName ) );
+		
+		// Strip workshop/ prefix if present
+		const char* pBase = szBaseName;
+		if ( V_strnicmp( pBase, "workshop/", 9 ) == 0 )
+			pBase = szBaseName + 9;
+		
+		// Strip .ugcXXXX suffix if present
+		char* pUgc = V_stristr( (char*)pBase, ".ugc" );
+		if ( pUgc )
+			*pUgc = '\0';
+		
+		FOR_EACH_VEC( m_vecAllMaps, i )
+		{
+			// Extract base name from existing entry
+			char szExistingBase[MAX_PATH];
+			V_strncpy( szExistingBase, m_vecAllMaps[i].Get(), sizeof( szExistingBase ) );
+			
+			const char* pExisting = szExistingBase;
+			if ( V_strnicmp( pExisting, "workshop/", 9 ) == 0 )
+				pExisting = szExistingBase + 9;
+			
+			char* pExistingUgc = V_stristr( (char*)pExisting, ".ugc" );
+			if ( pExistingUgc )
+				*pExistingUgc = '\0';
+			
+			if ( V_stricmp( pExisting, pBase ) == 0 )
+				return true;
+		}
+		return false;
+	};
+
+	// =====================================================
+	// SECOND: Scan regular map folders (skip workshop maps already found)
+	// =====================================================
+
+	FileFindHandle_t mapHandle;
+	const char* pMapFileName = filesystem->FindFirstEx( "maps/*.bsp", "GAME", &mapHandle );
+
+	while ( pMapFileName && pMapFileName[ 0 ] != '\0' )
+	{
+		if ( filesystem->FindIsDirectory( mapHandle ) )
+		{
+			pMapFileName = filesystem->FindNext( mapHandle );
+			continue;
+		}
+
+		if ( pMapFileName )
+		{
+			char szShortName[MAX_PATH] = { 0 };
+			V_strncpy( szShortName, pMapFileName, sizeof( szShortName ) );
+			V_StripExtension( szShortName, szShortName, sizeof( szShortName ) );
+
+			if ( !MapExists( szShortName ) )
+			{
+				m_vecAllMaps.AddToTail( szShortName );
+				m_vecIsWorkshopMap.AddToTail( false );
+				m_vecMapFileIDs.AddToTail( 0 );
+			}
+		}
+
+		pMapFileName = filesystem->FindNext( mapHandle );
+	}
+
+	filesystem->FindClose( mapHandle );
+
+	// Also search workshop folder via filesystem (for any we might have missed)
+	pMapFileName = filesystem->FindFirstEx( "maps/workshop/*.bsp", "GAME", &mapHandle );
+
+	while ( pMapFileName && pMapFileName[ 0 ] != '\0' )
+	{
+		if ( filesystem->FindIsDirectory( mapHandle ) )
+		{
+			pMapFileName = filesystem->FindNext( mapHandle );
+			continue;
+		}
+
+		if ( pMapFileName )
+		{
+			char szShortName[MAX_PATH] = { 0 };
+			V_snprintf( szShortName, sizeof( szShortName ), "workshop/%s", pMapFileName );
+			V_StripExtension( szShortName, szShortName, sizeof( szShortName ) );
+
+			if ( !MapExists( szShortName ) )
+			{
+				m_vecAllMaps.AddToTail( szShortName );
+				m_vecIsWorkshopMap.AddToTail( true );
+			}
+		}
+
+		pMapFileName = filesystem->FindNext( mapHandle );
+	}
+
+	filesystem->FindClose( mapHandle );
+
+	// Count workshop maps
+	int nWorkshopCount = 0;
+	for ( int i = 0; i < m_vecIsWorkshopMap.Count(); i++ )
+	{
+		if ( m_vecIsWorkshopMap[i] )
+			nWorkshopCount++;
+	}
+	Warning( "LoadMapList: Loaded %d maps, %d are workshop maps\n", m_vecAllMaps.Count(), nWorkshopCount );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Refreshes the map dropdown based on search/filter
+//-----------------------------------------------------------------------------
+void CTFCreateServerDialog::RefreshMapList()
+{
+	CScriptObject *pMapInfoObj = m_pDescription->FindObject( "cl_map" );
+	if ( !pMapInfoObj )
+		return;
+
+	// Get the search filter text
+	char szSearchFilter[256] = { 0 };
+	if ( m_pMapSearchEntry )
+	{
+		m_pMapSearchEntry->GetText( szSearchFilter, sizeof( szSearchFilter ) );
+		Q_strlower( szSearchFilter );
+	}
+
+	// Get the workshop filter state
+	bool bWorkshopOnly = false;
+	if ( m_pWorkshopFilterCheck )
+	{
+		bWorkshopOnly = m_pWorkshopFilterCheck->IsSelected();
+	}
+
+	Warning( "RefreshMapList: search='%s', workshopOnly=%d, totalMaps=%d\n", szSearchFilter, bWorkshopOnly, m_vecAllMaps.Count() );
+
+	// Remember the current selection
+	char szCurrentValue[256] = { 0 };
+	V_strncpy( szCurrentValue, pMapInfoObj->curValue, sizeof( szCurrentValue ) );
+
+	pMapInfoObj->RemoveAndDeleteAllItems();
+
+	// Add random map option
+	pMapInfoObj->AddItem( new CScriptListItem( "#GameUI_RandomMap", "-1" ) );
+
+	int iCount = m_vecAllMaps.Count();
+	for ( int k = 0; k < iCount; ++k )
+	{
+		const char *szMapName = m_vecAllMaps[k].Get();
+		bool bIsWorkshop = m_vecIsWorkshopMap[k];
+
+		// Filter by workshop if enabled
+		if ( bWorkshopOnly && !bIsWorkshop )
+			continue;
+
+		// Filter by search text
+		if ( szSearchFilter[0] != '\0' )
+		{
+			char szLowerMapName[MAX_PATH];
+			V_strncpy( szLowerMapName, szMapName, sizeof( szLowerMapName ) );
+			Q_strlower( szLowerMapName );
+
+			if ( V_strstr( szLowerMapName, szSearchFilter ) == NULL )
+				continue;
+		}
+
+		// Create display name - strip workshop/ prefix and .ugcXXX suffix for workshop maps
+		char szDisplayName[MAX_PATH];
+		V_strncpy( szDisplayName, szMapName, sizeof( szDisplayName ) );
+		
+		if ( bIsWorkshop )
+		{
+			// Strip "workshop/" prefix
+			const char* pszStart = szMapName;
+			if ( V_strnicmp( pszStart, "workshop/", 9 ) == 0 )
+			{
+				pszStart += 9;
+			}
+			V_strncpy( szDisplayName, pszStart, sizeof( szDisplayName ) );
+			
+			// Strip ".ugcXXX" suffix
+			char* pszUgc = V_strstr( szDisplayName, ".ugc" );
+			if ( pszUgc )
+			{
+				*pszUgc = '\0';
+			}
+		}
+
+		// Store the actual index k (not filtered index) so we can look up workshop info
+		pMapInfoObj->AddItem( new CScriptListItem( szDisplayName, CFmtStr( "%i", k ) ) );
+	}
+
+	// Update the ComboBox UI
+	mpcontrol_t *pList = m_pList;
+	while ( pList )
+	{
+		if ( pList->pScrObj == pMapInfoObj && pList->pControl )
+		{
+			ComboBox *pCombo = dynamic_cast<ComboBox*>( pList->pControl );
+			if ( pCombo )
+			{
+				pCombo->RemoveAll();
+
+				int iRow = 0;
+				int iCurrentRow = 0;
+				CScriptListItem *pListItem = pMapInfoObj->pListItems;
+				while ( pListItem )
+				{
+					if ( !Q_stricmp( pListItem->szValue, szCurrentValue ) )
+						iCurrentRow = iRow;
+
+					pCombo->AddItem( pListItem->szItemText, NULL );
+					pListItem = pListItem->pNext;
+					iRow++;
+				}
+
+				pCombo->ActivateItemByRow( iCurrentRow );
+			}
+			break;
+		}
+		pList = pList->next;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called when search text changes
+//-----------------------------------------------------------------------------
+void CTFCreateServerDialog::OnTextChanged( vgui::Panel *panel )
+{
+	Warning( "OnTextChanged called, panel=%p, m_pMapSearchEntry=%p\n", panel, m_pMapSearchEntry );
+	// Refresh map list if this came from the map search entry
+	if ( panel == m_pMapSearchEntry )
+	{
+		Warning( "Refreshing map list from search\n" );
+		RefreshMapList();
+	}
+	// Filter options if this came from the options search entry
+	else if ( panel == m_pOptionsSearchEntry )
+	{
+		FilterOptions();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called when workshop filter checkbox changes
+//-----------------------------------------------------------------------------
+void CTFCreateServerDialog::OnCheckButtonChecked( int state )
+{
+	Warning( "OnCheckButtonChecked called, state=%d, m_pWorkshopFilterCheck=%p\n", state, m_pWorkshopFilterCheck );
+	RefreshMapList();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Filter all options across all tabs based on search text
+//-----------------------------------------------------------------------------
+void CTFCreateServerDialog::FilterOptions()
+{
+	// Get the search filter text
+	char szSearchFilter[256] = { 0 };
+	if ( m_pOptionsSearchEntry )
+	{
+		m_pOptionsSearchEntry->GetText( szSearchFilter, sizeof( szSearchFilter ) );
+		Q_strlower( szSearchFilter );
+	}
+
+	bool bHasFilter = ( szSearchFilter[0] != '\0' );
+
+	// If no filter, show everything in original order
+	if ( !bHasFilter )
+	{
+		mpcontrol_t *pList = m_pList;
+		while ( pList )
+		{
+			pList->SetVisible( true );
+			pList = pList->next;
+		}
+		FOR_EACH_VEC( m_pPages, i )
+		{
+			if ( m_pPages[i] )
+				m_pPages[i]->InvalidateLayout();
+		}
+		return;
+	}
+
+	// Clear all page lists and rebuild with matches first
+	FOR_EACH_VEC( m_pPages, i )
+	{
+		if ( m_pPages[i] )
+			m_pPages[i]->RemoveAll();
+	}
+
+	// First pass: Add matching items to their respective pages
+	mpcontrol_t *pList = m_pList;
+	while ( pList )
+	{
+		// Skip map-related controls as they have their own search
+		if ( pList->pScrObj && 
+			( !Q_stricmp( pList->pScrObj->cvarname, "cl_map" ) ||
+			  !Q_stricmp( pList->pScrObj->cvarname, "cl_map_search" ) ||
+			  !Q_stricmp( pList->pScrObj->cvarname, "cl_map_workshop_only" ) ) )
+		{
+			pList = pList->next;
+			continue;
+		}
+
+		bool bMatches = false;
+
+		if ( pList->pScrObj )
+		{
+			// Search in the prompt text
+			char szLowerPrompt[256];
+			V_strncpy( szLowerPrompt, pList->pScrObj->prompt, sizeof( szLowerPrompt ) );
+			Q_strlower( szLowerPrompt );
+
+			// Search in the cvar name
+			char szLowerCvar[256];
+			V_strncpy( szLowerCvar, pList->pScrObj->cvarname, sizeof( szLowerCvar ) );
+			Q_strlower( szLowerCvar );
+
+			// Search in the tooltip
+			char szLowerTooltip[256] = { 0 };
+			if ( pList->pScrObj->tooltip && pList->pScrObj->tooltip[0] )
+			{
+				V_strncpy( szLowerTooltip, pList->pScrObj->tooltip, sizeof( szLowerTooltip ) );
+				Q_strlower( szLowerTooltip );
+			}
+
+			// Check if search text is found
+			bMatches = ( V_strstr( szLowerPrompt, szSearchFilter ) != NULL ) ||
+					   ( V_strstr( szLowerCvar, szSearchFilter ) != NULL ) ||
+					   ( szLowerTooltip[0] != '\0' && V_strstr( szLowerTooltip, szSearchFilter ) != NULL );
+		}
+
+		if ( bMatches )
+		{
+			pList->SetVisible( true );
+			if ( pList->pScrObj && pList->pScrObj->objParent )
+			{
+				PanelListPanel *pParent = dynamic_cast<PanelListPanel*>( pList->pScrObj->objParent );
+				if ( pParent )
+					pParent->AddItem( NULL, pList );
+			}
+		}
+
+		pList = pList->next;
+	}
+
+	// Second pass: Add non-matching items (hidden)
+	pList = m_pList;
+	while ( pList )
+	{
+		// Skip map-related controls
+		if ( pList->pScrObj && 
+			( !Q_stricmp( pList->pScrObj->cvarname, "cl_map" ) ||
+			  !Q_stricmp( pList->pScrObj->cvarname, "cl_map_search" ) ||
+			  !Q_stricmp( pList->pScrObj->cvarname, "cl_map_workshop_only" ) ) )
+		{
+			pList = pList->next;
+			continue;
+		}
+
+		bool bMatches = false;
+
+		if ( pList->pScrObj )
+		{
+			char szLowerPrompt[256];
+			V_strncpy( szLowerPrompt, pList->pScrObj->prompt, sizeof( szLowerPrompt ) );
+			Q_strlower( szLowerPrompt );
+
+			char szLowerCvar[256];
+			V_strncpy( szLowerCvar, pList->pScrObj->cvarname, sizeof( szLowerCvar ) );
+			Q_strlower( szLowerCvar );
+
+			char szLowerTooltip[256] = { 0 };
+			if ( pList->pScrObj->tooltip && pList->pScrObj->tooltip[0] )
+			{
+				V_strncpy( szLowerTooltip, pList->pScrObj->tooltip, sizeof( szLowerTooltip ) );
+				Q_strlower( szLowerTooltip );
+			}
+
+			bMatches = ( V_strstr( szLowerPrompt, szSearchFilter ) != NULL ) ||
+					   ( V_strstr( szLowerCvar, szSearchFilter ) != NULL ) ||
+					   ( szLowerTooltip[0] != '\0' && V_strstr( szLowerTooltip, szSearchFilter ) != NULL );
+		}
+
+		if ( !bMatches )
+		{
+			pList->SetVisible( false );
+			if ( pList->pScrObj && pList->pScrObj->objParent )
+			{
+				PanelListPanel *pParent = dynamic_cast<PanelListPanel*>( pList->pScrObj->objParent );
+				if ( pParent )
+					pParent->AddItem( NULL, pList );
+			}
+		}
+
+		pList = pList->next;
+	}
+
+	// Invalidate all pages to refresh their layout
+	FOR_EACH_VEC( m_pPages, i )
+	{
+		if ( m_pPages[i] )
+			m_pPages[i]->InvalidateLayout();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -3594,6 +4486,43 @@ void CTFCreateServerDialog::OnThink()
 	// This is not as effecient as I wanted it to be.
 	// Ideally I would want some event to hook onto, but I have no idea what i'm doing.
 
+	// Check if map filters have changed
+	if ( m_pMapSearchEntry || m_pWorkshopFilterCheck )
+	{
+		char szCurrentSearch[256] = { 0 };
+		bool bCurrentWorkshopOnly = false;
+
+		if ( m_pMapSearchEntry )
+		{
+			m_pMapSearchEntry->GetText( szCurrentSearch, sizeof( szCurrentSearch ) );
+		}
+		if ( m_pWorkshopFilterCheck )
+		{
+			bCurrentWorkshopOnly = m_pWorkshopFilterCheck->IsSelected();
+		}
+
+		// Check if either filter changed
+		if ( Q_strcmp( szCurrentSearch, m_szLastSearchFilter ) != 0 || bCurrentWorkshopOnly != m_bLastWorkshopOnly )
+		{
+			V_strncpy( m_szLastSearchFilter, szCurrentSearch, sizeof( m_szLastSearchFilter ) );
+			m_bLastWorkshopOnly = bCurrentWorkshopOnly;
+			RefreshMapList();
+		}
+	}
+
+	// Check if options search filter has changed
+	if ( m_pOptionsSearchEntry )
+	{
+		char szCurrentOptionsSearch[256] = { 0 };
+		m_pOptionsSearchEntry->GetText( szCurrentOptionsSearch, sizeof( szCurrentOptionsSearch ) );
+
+		if ( Q_strcmp( szCurrentOptionsSearch, m_szLastOptionsSearchFilter ) != 0 )
+		{
+			V_strncpy( m_szLastOptionsSearchFilter, szCurrentOptionsSearch, sizeof( m_szLastOptionsSearchFilter ) );
+			FilterOptions();
+		}
+	}
+
 	//Msg("Think Enter\n");
 	GatherCurrentValues(); // If this is not called, we would be reading old values.
 	if ( m_pDescription )
@@ -3622,16 +4551,19 @@ void CTFCreateServerDialog::OnThink()
 					}
 				}
 				//Msg("Current Selection: %s\n", name);
-				const char* szMapImage = CFmtStr("vgui/maps/menu_photos_%s", szMapName);
-
-				IMaterial *pMapMaterial = materials->FindMaterial( szMapImage, TEXTURE_GROUP_VGUI, false );
-				if( pMapMaterial && !IsErrorMaterial( pMapMaterial ) )
+				if( szMapName )
 				{
-					pImagePanel->SetImage(CFmtStr("maps/menu_thumb_%s", szMapName));
-				}
-				else
-				{ 
-					pImagePanel->SetImage(CFmtStr("maps/menu_thumb_default", szMapName));
+					const char* szMapImage = CFmtStr("vgui/maps/menu_thumb_%s", szMapName);
+
+					IMaterial *pMapMaterial = materials->FindMaterial( szMapImage, TEXTURE_GROUP_VGUI, false );
+					if( pMapMaterial && !IsErrorMaterial( pMapMaterial ) )
+					{
+						pImagePanel->SetImage(CFmtStr("maps/menu_thumb_%s", szMapName));
+					}
+					else
+					{ 
+						pImagePanel->SetImage("maps/menu_thumb_default");
+					}
 				}
 			}
 		}

@@ -1,8 +1,17 @@
-#base items_game.txt
 "items_game"
 {
-    "attributes"
-    {
+	"attributes"
+	{
+		"264"
+		{
+			"name"	"melee range multiplier"
+			"attribute_class"	"melee_range_multiplier"
+			"description_string"	"#Attrib_MeleeRangeMultiplier"
+			"description_format"	"value_is_percentage"
+			"hidden"	"0"
+			"effect_type"	"positive"
+			"stored_as_integer"	"0"
+		}
 		"296"
 		{
 			"name"	"sapper kills collect crits"
@@ -23,6 +32,16 @@
 			"effect_type"	"negative"
 			"stored_as_integer"	"0"
 		}
+		"522"
+		{
+			"name"	"damage causes airblast"
+			"attribute_class"	"damage_causes_airblast"
+			"description_format"	"value_is_additive"
+			"description_string"	"#Attrib_KnockbackOnHit"
+			"hidden"	"0"
+			"effect_type"	"positive"
+			"stored_as_integer"	"1"
+		}
 		"738"
 		{
 			"name"	"spunup_damage_resistance"
@@ -32,9 +51,78 @@
 			"hidden"	"0"
 			"effect_type"	"positive"
 		}
-    }
+		"853"
+		{
+			"name"	"mult_patient_overheal_penalty_active"
+			"attribute_class"	"mult_patient_overheal_penalty_active"
+			"description_string"	"#Attrib_PatientOverheal_Penalty_Active"
+			"description_format"	"value_is_percentage"
+			"hidden"	"0"
+			"effect_type"	"negative"
+			"armory_desc"	"on_active"
+			"stored_as_integer"	"0"
+		}
+		"854"
+		{
+			"name"	"mult_health_fromhealers_penalty_active"
+			"attribute_class"	"mult_health_fromhealers_penalty_active"
+			"description_string"	"#Attrib_HealthFromHealers_Reduced_Active"
+			"description_format"	"value_is_percentage"
+			"hidden"	"0"
+			"effect_type"	"negative"
+			"armory_desc"	"on_wearer"
+			"stored_as_integer"	"0"
+		}
+	}
 	"prefabs"
 	{
+		"weapon_kritzkrieg" // The Kritzkrieg
+		{
+			"extra_wearable"			"models/weapons/c_models/c_kritz_backpack/c_kritz_backpack.mdl"
+			"attributes"
+			{
+				"lunchbox adds minicrits" // Used for the kritzkrieg's new sound effect
+				{
+					"attribute_class"	"set_weapon_mode"
+					"value"				"1"
+				}
+			}
+			"visuals"
+			{
+				"player_bodygroups"
+				{
+					"medic_backpack"			"1"
+				}
+			}
+//			"visuals_red"
+//			{
+//				"attached_models"
+//				{
+//					"0"
+//					{
+//						"model"	"models/weapons/c_models/c_overhealer/c_overhealer.mdl"
+//					}
+//				}
+//				"custom_particlesystem"
+//				{
+//					"system"	"medicgun_beam_kritzkrieg_red"
+//				}
+//			}
+//			"visuals_blu"
+//			{
+//				"attached_models"
+//				{
+//					"0"
+//					{
+//						"model"	"models/weapons/c_models/c_overhealer/c_overhealer.mdl"
+//					}
+//				}
+//				"custom_particlesystem"
+//				{
+//					"system"	"medicgun_beam_kritzkrieg_red"
+//				}
+//			}
+		}
 		"weapon_crusaders_crossbow" // The Crusader's Crossbow
 		{
 			"attributes"
@@ -105,7 +193,7 @@
 				"fire rate penalty"
 				{
 					"attribute_class"	"mult_postfiredelay"
-					"value"				"1.5"
+					"value"				"1.2"
 				}
 				"crit mod disabled"
 				{
@@ -131,12 +219,27 @@
 			{
 				"spunup_damage_resistance"
 				{
-					"value"					"delete"
+					"value"				"delete"
 				}
 				"spunup_damage_resistance_simple"
 				{
-					"attribute_class"		"spunup_damage_resistance_simple"
-					"value"					"0.80"
+					"attribute_class"	"spunup_damage_resistance_simple"
+					"value"				"0.80"
+				}
+				"damage force reduction"
+				{
+					"attribute_class"	"damage_force_reduction"
+					"value"				"0.25"
+				}
+				"airblast vulnerability multiplier"
+				{
+					"attribute_class"	"airblast_vulnerability_multiplier"
+					"value"				"0.25"
+				}
+				"provide on active"
+				{
+					"attribute_class"	"provide_on_active"
+					"value"				"1"
 				}
 			}
 		}
@@ -202,6 +305,83 @@
 				}
 			}
 		}
+		"weapon_battleaxe" // The Scotsman's Skullcutter
+		{
+			"attributes"
+			{
+				"damage force reduction"
+				{
+					"attribute_class"	"damage_force_reduction"
+					"value"				"0.5"
+				}				
+				"crit mod disabled"
+				{
+					"attribute_class"	"mult_crit_chance"
+					"value"				"0"
+				}
+			}
+		}
+		"weapon_targe" // The Chargin' Targe
+		{
+			"attributes"
+			{
+				"damage force reduction"
+				{
+					"attribute_class"	"damage_force_reduction"
+					"value"				"0.65"
+				}
+				"airblast vulnerability multiplier"
+				{
+					"attribute_class"	"airblast_vulnerability_multiplier"
+					"value"				"0.5"
+				}
+			}
+		}
+		"weapon_disciplinary_action" // The Disciplinary Action
+		{	
+			"attributes"
+			{
+				"melee range multiplier"
+				{
+					"value"			"delete"
+				}
+				"melee range multiplier"
+				{
+					"attribute_class"	"melee_range_multiplier"
+					"value"	"1.5"
+				}
+			}
+		}	
+		"weapon_amputator" // The Amputator
+		{
+			"attributes"
+			{
+				"health regen"
+				{
+					"attribute_class"	"add_health_regen"
+					"value"	"4"
+				}
+			}
+		}
+		"weapon_shortstop" // The Shortstop
+		{
+			"attributes"
+			{
+				"damage force increase hidden"
+				{
+					"value"				"delete"
+				}
+				"airblast vulnerability multiplier hidden"
+				{
+					"value" 			"delete"
+				}
+				"reload time increased hidden"
+				{
+					"attribute_class"	"mult_reload_time_hidden"
+					"value"				"1.25"
+				}
+			}
+		}
 	}
 	"items"
 	{
@@ -212,16 +392,16 @@
 			{
 				"slow enemy on hit"
 				{
-					"value"					"delete"
+					"value"				"delete"
 				}
 				"spunup_damage_resistance"
 				{
-					"value"					"delete"
+					"value"				"delete"
 				}
-				"heal on hit for rapidfire"
+				"heal on kill"
 				{
-					"attribute_class"		"add_onhit_addhealth"
-					"value"					"5"
+					"attribute_class"	"heal_on_kill"
+					"value"				"50"
 				}
 				"reduced_healing_from_medics"
 				{
@@ -231,19 +411,18 @@
 				"weapon spread bonus"
 				{
 					"attribute_class"	"mult_spread_scale"
-					"value"	"0.8"
+					"value"				"0.8"
 				}	
-                "fire rate bonus"
+				"fire rate bonus"
 				{
 					"attribute_class"	"mult_postfiredelay"
-					"value"	"0.85"
+					"value"				"0.85"
 				}
 				"dmg penalty vs buildings"
 				{
 					"attribute_class"	"mult_dmg_vs_buildings"
-					"value" "0.65"
+					"value"				"0.65"
 				}
-
 			}
 		}
 		"57" // The Razorback
@@ -259,6 +438,42 @@
 					"attribute_class"	"add_maxhealth"
 					"value"				"-25"
 				}
+			}
+		}
+		"128" // Equalizer
+		{
+			"attributes"
+			{
+				"mod shovel damage boost"
+				{
+					"value"				"delete"
+				}
+				"dmg bonus while half dead"
+				{
+					"attribute_class"	"mult_dmg_bonus_while_half_dead"
+					"value"				"1.5"
+				}
+				"dmg penalty while half alive"
+				{
+					"attribute_class"	"mult_dmg_penalty_while_half_alive"
+					"value"				"0.75"
+				}
+				"dmg from ranged reduced"
+				{
+					"attribute_class"	"dmg_from_ranged"
+					"value"				"0.8"
+				}
+			}
+		}
+		"131" // The Chargin' Targe
+		{
+			"visuals_red"
+			{
+				"skin"	"0"
+			}
+			"visuals_blu"
+			{
+				"skin"	"1"
 			}
 		}
 		"133" // The Gunboats
@@ -329,7 +544,7 @@
 				}
 				"jarate duration"
 				{
-					"attribute_class" "jarate_duration"
+					"attribute_class" 	"jarate_duration"
 					"value"				"7"
 				}
 				"damage penalty on bodyshot"
@@ -356,6 +571,32 @@
 					"attribute_class"	"add_maxhealth"
 					"value"				"25"
 				}
+				"move speed bonus"
+				{
+					"attribute_class"	"mult_player_movespeed"
+					"value"				"1.1"
+				}
+				"maxammo primary reduced"
+				{
+					"attribute_class"	"mult_maxammo_primary"
+					"value"				"0.5"
+				}
+			}
+		}
+		"232" // The Bushwacka
+		{
+			"attributes"
+			{
+				"fire rate penalty"
+				{
+					"attribute_class"	"mult_postfiredelay"
+					"value"				"1.2"
+				}
+				"damage penalty"
+				{
+					"attribute_class"	"mult_dmg"
+					"value"				"0.80"
+				}
 			}
 		}
 		"264" // Frying Pan (yes)
@@ -373,6 +614,37 @@
 				"spy"					"1"
 			}
 		}
+//		"307" // Ullapool Caber (CURRENTLY BROKEN, TAKE A LOOK AT IT LATER)
+// 		{
+// 			"attributes"
+// 			{
+// 				"dmg falloff decreased"
+// 				{
+// 					"attribute_class"	"mult_dmg_falloff"
+// 					"value"				"0"
+// 				}
+// 			}
+// 			"visuals"
+// 			{
+// 				"animation_replacement"
+// 				{
+// 					"ACT_VM_DRAW" 					"ACT_MELEE_ALLCLASS_VM_DRAW"
+// 					"ACT_VM_HOLSTER"				"ACT_MELEE_ALLCLASS_VM_HOLSTER"
+// 					"ACT_VM_IDLE" 					"ACT_MELEE_ALLCLASS_VM_IDLE"
+// 					"ACT_VM_PULLBACK"				"ACT_MELEE_ALLCLASS_VM_PULLBACK"
+// 					"ACT_VM_PRIMARYATTACK" 			"ACT_MELEE_ALLCLASS_VM_PRIMARYATTACK"
+// 					"ACT_VM_DRYFIRE"				"ACT_MELEE_ALLCLASS_VM_DRYFIRE"
+// 					"ACT_VM_SWINGHARD"				"ACT_MELEE_ALLCLASS_VM_SWINGHARD"
+// 					"ACT_VM_HITCENTER"				"ACT_MELEE_ALLCLASS_VM_HITCENTER"
+// 					"ACT_VM_IDLE_TO_LOWERED"		"ACT_MELEE_ALLCLASS_VM_IDLE_TO_LOWERED"
+// 					"ACT_VM_IDLE_LOWERED"			"ACT_MELEE_ALLCLASS_VM_IDLE_LOWERED"
+// 					"ACT_VM_LOWERED_TO_IDLE"		"ACT_MELEE_ALLCLASS_VM_LOWERED_TO_IDLE"
+// 					"ACT_MELEE_VM_INSPECT_START"	"ACT_MELEE_ALLCLASS_VM_INSPECT_START"
+// 					"ACT_MELEE_VM_INSPECT_IDLE"		"ACT_MELEE_ALLCLASS_VM_INSPECT_IDLE"
+// 					"ACT_MELEE_VM_INSPECT_END"		"ACT_MELEE_ALLCLASS_VM_INSPECT_END"
+// 				}
+// 			}
+// 		}
 		"311" // The Buffalo Steak Sandvich
 		{
 			"attributes"
@@ -383,24 +655,59 @@
 				}
 			}
 		}
+		"317" // Candy Cane
+		{
+			"attributes"
+			{
+				"dmg taken from blast increased"
+				{
+					"value"				"delete"
+				}
+				"health from packs increased"
+				{
+					"attribute_class"	"mult_health_frompacks"
+					"value"				"1.20"
+				}
+				"max health additive penalty"
+				{
+					"attribute_class"	"add_maxhealth"
+					"value"				"-15"
+				}
+			}
+		}
 		"331" // Fists of Steel
 		{
 			"attributes"
 			{
+				"provide on active hidden"
+				{
+					"attribute_class"	"provide_on_active"
+					"value"				"1"
+				}
 				"dmg from ranged reduced"
 				{
-					"attribute_class"	"dmg_from_ranged"
 					"value"				"delete"
 				}
-				"dmg taken from blast reduced"
+				"dmg taken from blast reduced active"
 				{
 					"attribute_class"	"mult_dmgtaken_from_explosions"
 					"value"				"0.8"
 				}
-				"dmg taken from bullets reduced"
+				"dmg taken from bullets reduced active"
 				{
 					"attribute_class"	"mult_dmgtaken_from_bullets"
 					"value"				"0.6"
+				}
+			}
+		}
+		"355" // Fan O'War
+		{
+			"attributes"
+			{
+				"melee range multiplier"
+				{
+					"attribute_class"	"melee_range_multiplier"
+					"value"				"1.5"
 				}
 			}
 		}
@@ -443,6 +750,59 @@
 				}
 			}
 		}
+		"411" // Quickfix
+		{
+			"attributes"
+			{
+				"ubercharge rate bonus"
+				{
+					"value"				"delete"
+				}
+				"ubercharge rate bonus"
+				{
+					"attribute_class"	"mult_medigun_uberchargerate"
+					"value"				"1.2"
+				}
+			}
+
+		}
+		"426" // The Eviction Notice
+		{
+			"static_attrs"
+			{
+				"mod_maxhealth_drain_rate"				"delete"
+				"single wep deploy time decreased"		"0.8"
+				"switch from wep deploy time decreased"	"0.8"
+			}
+			"attributes"
+			{
+				"provide on active"
+				{
+					"attribute_class"	"provide_on_active"
+					"value"				"1"
+				}
+				"dmg taken increased"
+				{
+					"attribute_class"	"mult_dmgtaken"
+					"value"				"1.25"
+				}
+			}
+		}
+		"413" // The Solemn Vow
+		{
+			"attributes"
+			{
+				"fire rate bonus"
+				{
+					"value"				"delete"
+				}
+				"damage penalty"
+				{
+					"attribute_class"	"mult_dmg"
+					"value"				"0.85"
+				}
+			}
+		}
 		"449" // The Winger
 		{
 			"used_by_classes"
@@ -480,22 +840,18 @@
 			{
 				"dmg pierces resists absorbs"
 				{
-					"attribute_class"	"mod_pierce_resists_absorbs"
 					"value"				"delete"
 				}
 				"crit mod disabled"
 				{
-					"attribute_class"	"mult_crit_chance"
 					"value"				"delete"
 				}
 				"fire rate penalty"
 				{
-					"attribute_class"	"mult_postfirebonus"
 					"value"				"delete"
 				}
 				"damage bonus while disguised"
 				{
-					"attribute_class"	"mult_dmg_disguised"
 					"value"				"delete"
 				}
 				"fire rate bonus"
@@ -558,6 +914,17 @@
 				}
 			}
 		}
+// 		"656" // Holiday Punch (CURRENTLY BROKEN, TAKE A LOOK AT IT LATER)
+// 		{
+// 			"attributes"
+// 			{
+// 				"minicrits become crits"
+// 				{
+// 					"attribute_class"	"minicrits_become_crits"
+// 					"value"				"1"
+// 				}
+// 			}
+//		}
 		"751" // The Cleaner's Carbine
 		{
 			"attributes"
@@ -639,6 +1006,38 @@
 				{
 					"attribute_class"	"mult_dmg"
 					"value"				"0.80"
+				}
+			}
+			"visuals_red"
+			{
+				"skin"	"0"
+			}
+			"visuals_blu"
+			{
+				"skin"	"1"
+			}
+		}
+		"1098" // The Classic
+		{
+			"attributes"
+			{
+				"damage penalty on bodyshot"
+				{
+					"value"				"delete"
+				}
+				"sniper no headshot without full charge"
+				{
+					"value"				"delete"
+				}
+				"damage penalty"
+				{
+					"attribute_class"	"mult_dmg"
+					"value"				"0.80"
+				}
+				"fire rate penalty"
+				{
+					"attribute_class"	"mult_postfiredelay"
+					"value"				"1.25"
 				}
 			}
 		}

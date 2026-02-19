@@ -752,7 +752,7 @@ void CBasePlayer::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, flo
 	if ( !stepSoundName )
 		return;
 
-	m_Local.m_nStepside = !nSide;
+	m_Local.m_nStepside = ~nSide;
 
 	CSoundParameters params;
 
@@ -796,11 +796,11 @@ void CBasePlayer::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, flo
 	ep.m_pSoundName = params.soundname;
 #if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
 
-	CTFPlayer* pPlayer = ToTFPlayer( this );
 #if defined (CLIENT_DLL)
-	if( TFGameRules()->IsMannVsMachineMode() )
+	CTFPlayer* pPlayer = ToTFPlayer(this);
+	if( TFGameRules()->IsPVEModeActive() )
 	{
-		ep.m_flVolume = ( IsLocalPlayer() && GetTeamNumber() == TF_TEAM_PVE_INVADERS || IsLocalPlayer() && pPlayer->IsRobot() ) ? params.volume * 0.3 : params.volume;
+		ep.m_flVolume = ( IsLocalPlayer() && GetTeamNumber() == ( TFGameRules()->IsMannVsMachineMode() ? TF_TEAM_PVE_INVADERS : TF_TEAM_PVE_DEFENDERS ) || IsLocalPlayer() && pPlayer->IsRobot() ) ? params.volume * 0.3 : params.volume;
 	}
 	else
 	{

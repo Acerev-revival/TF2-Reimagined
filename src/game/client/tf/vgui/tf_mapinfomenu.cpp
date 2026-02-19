@@ -508,7 +508,14 @@ void CTFMapInfoMenu::LoadMapPage()
 						switch ( TFGameRules()->GetGameType() )
 						{
 						case TF_GAMETYPE_CTF:
-							pszDescription = "#default_ctf_description";
+							if (TFGameRules()->IsInBdMode())
+							{
+								pszDescription = "#default_bd_description";
+							}
+							else
+							{
+								pszDescription = "#default_ctf_description";
+							}
 							break;
 						case TF_GAMETYPE_CP:
 							if ( TFGameRules()->IsInKothMode() )
@@ -535,6 +542,9 @@ void CTFMapInfoMenu::LoadMapPage()
 							break;
 						case TF_GAMETYPE_RD:
 							pszDescription = "#default_rd_description";
+							break;
+						case TF_GAMETYPE_RAID:
+							pszDescription = "#default_raid_description";
 							break;
 						case TF_GAMETYPE_PASSTIME:
 							pszDescription = "#default_passtime_description";

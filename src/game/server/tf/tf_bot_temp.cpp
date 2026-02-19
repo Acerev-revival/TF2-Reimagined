@@ -417,12 +417,18 @@ CON_COMMAND_F( bot_kick, "Remove a bot by name, or an entire team (\"red\" or \"
 CON_COMMAND_F( bot, "Add a bot.", FCVAR_NONE )
 {
 	// Listenserver host or rcon access only!
-	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+	if ( !UTIL_IsCommandIssuedByServerAdmin() ) 
+	{
+		Msg( "Only the Server owner can add bots.\n" );
 		return;
+	}
 
 	// Allow bots in item testing mode
 	if ( !sv_cheats->GetBool() && !TFGameRules()->IsInItemTestingMode() )
+	{ 
+		Msg( "You must have sv_cheats set to 1 to spawn a bot.\n" );
 		return;
+	}
 
 	//CDODPlayer *pPlayer = CDODPlayer::Instance( UTIL_GetCommandClientIndex() );
 
@@ -1456,8 +1462,6 @@ void BotGenerateAndWearItem( CTFPlayer *pBot, const char *itemName )
 	else
 	{
 		{
-			extern ConVar tf_bot_use_items;
-			if ( !tf_bot_use_items.GetInt() )
 			Msg( "Failed to create an item named %s\n", itemName );
 		}
 	}

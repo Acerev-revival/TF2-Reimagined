@@ -1,5 +1,13 @@
 "Resource/HudLayout.res"
 {
+	RadialMenu
+	{
+		"fieldName" "RadialMenu"
+		"visible" "1"
+		"enabled" "1"
+		"wide"	 "2450"
+		"tall"	 "480"		
+	}
 	HudPlayerStatus
 	{
 		"fieldName" "HudPlayerStatus"
@@ -764,7 +772,10 @@
 
 		"item_wide"	"135"
 		
-		"show_avatar"		"0"
+		"show_avatar"		"1"
+		"avatar_xpos"	"-11"
+		"avatar_ypos"	"-1"
+		"avatar_tall"	"17"
 		
 		"show_dead_icon"	"1"
 		"dead_xpos"			"1"
@@ -774,11 +785,11 @@
 		
 		"show_voice_icon"	"1"
 		"icon_ypos"			"0"
-		"icon_xpos"			"15"
+		"icon_xpos"			"18"
 		"icon_tall"			"16"
 		"icon_wide"			"16"
 		
-		"text_xpos"			"33"
+		"text_xpos"			"37"
 	}
 
 	HudHintDisplay
